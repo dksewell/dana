@@ -1,0 +1,15 @@
+digraph {
+  
+  node [colorscheme=greens9, color=7, style=filled,fontcolor=1, shape=ellipse]
+  edge [color = grey, style = dashed, arrowsize = 1.5, penwidth = 2, fontcolor = red]
+
+  A [label = "Start"]
+  B [label = "Step 1"]
+  C [label = "Step 2"]
+  D [label = "End"]
+
+  A -> B [label = "to Step 1"]
+  B -> C [label = "to Step 2"]
+  C -> D [label = "to End"]
+  
+}

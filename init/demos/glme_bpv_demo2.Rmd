@@ -1,0 +1,158 @@
+---
+title: "glme_bpv_demo2"
+author: "Abran Nicolas"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+
+library(rstanarm)
+library(lme4)
+
+
+
+```
+
+
+# Function Define
+```{r, include = FALSE}
+
+glme_bpv <- function(object){
+
+  # Response
+  y_obs <- object$data[,all.vars(object$formula)[1]]
+
+  # Predicted expectations
+  mu <- rstanarm::posterior_epred(object)
+
+  # Response vs fitted residuals
+  res_obs <- matrix(data = y_obs,
+                    nrow = nrow(mu),
+                    ncol = NROW(y_obs),
+                    byrow = T) - mu
+
+  # Predicted response
+  y_pred <- rstanarm::posterior_predict(object)
+
+  # Predicted response vs fitted residuals
+  res_pred <- y_pred - mu
+
+  loess_obs <- function(i){
+
+    # Fit loess to residuals vs fitted
+    loess_fit = loess(res_obs[i,] ~ mu[i,]) |> predict()
+
+    sum(loess_fit^2)
+
+  }
+
+  loess_pred <- function(i){
+
+    # Fit loess to residuals vs fitted
+    loess_fit = loess(res_pred[i,] ~ mu[i,]) |> predict()
+
+    sum(loess_fit^2)
+
+  }
+
+  T_obs <- sapply(1:nrow(res_obs), loess_obs)
+  T_pred <- sapply(1:nrow(res_pred), loess_pred)
+
+
+  rslt <- list(
+    bpval = mean(T_obs > T_pred),
+    bpplot =
+      ggplot2::ggplot(data.frame(T_obs, T_pred)) +
+      ggplot2::geom_point(mapping = ggplot2::aes(x = T_obs, y = T_pred)) +
+      ggplot2::geom_abline(slope = 1, intercept = 0)
+  )
+
+  return(rslt)
+
+}
+
+
+
+
+
+```
+
+
+# Simulated Data Example
+
+
+```{r}
+
+set.seed(1234)
+
+# Group Specific Intercepts -----------------------
+x <- rnorm(100)
+group <- rep(1:10, each = 10)
+
+intercept <- rep(runif(n = 10, 0, 20), each = 10)
+
+y <- intercept + 2 * x + rnorm(100, 0, 1)
+
+int_dat <- data.frame(x, group, y)
+
+
+# Group Specific Slopes -----------------------
+
+x <- rnorm(100)
+group <- rep(1:10, each = 10)
+
+effect <- rep(runif(n = 10, 0, 20), each = 10)
+
+y <- effect * x + rnorm(100, 0, 1)
+
+slope_dat <- data.frame(x, group, y)
+
+# Compare BPV 
+
+# True group-based intercepts
+
+fit_int1 <- stan_glmer(formula = y ~ x + (1 | group), data = int_dat)
+fit_int2 <- stan_glmer(formula = y ~ (x | group) , data = int_dat)
+
+# True group-based slopes
+fit_slope1 <- stan_glmer(formula = y ~ x + (1 | group), data = slope_dat)
+fit_slope2 <- stan_glmer(formula = y ~ (x | group) , data = slope_dat)
+
+# BPV
+
+bp_int1 <- glme_bpv(fit_int1)
+bp_int2 <- glme_bpv(fit_int2)
+
+bp_slope1 <- glme_bpv(fit_slope1)
+bp_slope2 <- glme_bpv(fit_slope2)
+
+
+# Matrix
+
+bpmat <- matrix(data = c(bp_int1$bpval, bp_int2$bpval,
+                         bp_slope1$bpval, bp_slope2$bpval), nrow = 2, ncol = 2)
+
+rownames(bpmat) <- c("Group Intercepts Model", "Group Slopes Model")
+colnames(bpmat) <- c("True Intercept DGM", "True Slopes DGM")
+
+print(bpmat)
+```
+
+
+# Real Data Example
+
+```{r}
+
+dat <- sleepstudy
+
+# Subject specific slopes
+fit1 <- rstanarm::stan_glmer(formula = Reaction ~ Days + (Days| Subject), data = sleepstudy)
+
+# Subject specific intercepts
+fit2 <- rstanarm::stan_glmer(formula = Reaction ~ Days + (1| Subject), data = sleepstudy)
+
+glme_bpv(fit1)
+glme_bpv(fit2)
+
+```

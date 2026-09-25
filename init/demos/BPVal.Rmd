@@ -1,0 +1,457 @@
+---
+title: "BPVal"
+author: "AN"
+date: "2026-06-17"
+output: html_document
+---
+
+Mixed effects models can be used to incorporate grouping variables in
+the context of generalized linear models. These types of models
+incorporate both fixed and random effects on the mean of the response distribution
+through the link function. That is,
+
+$g(\mu_i) = \mathbf{x}_i^\top \mathbf{\beta} + \mathbf{z}_i^\top \mathbf{u}$
+
+$E[y_i | \mathbf{u}] = \mu_i$
+
+where $y_i |\mathbf{u}$ is distributed according to an exponential family. 
+We are interested in the chisquare-type pearson statistic: 
+
+$T(\mathbf{y},\theta) = \frac{\sum_i(y_i - E[y_i|\theta])^2}{V[y_i|\theta]}$
+
+
+The `rstanarm` package is capable of fitting generalized linear mixed
+effects models, from which we can obtain samples of the linear predictor
+(incorporating both the fixed and random effect) from the posterior distribution.
+
+After fitting an `rstanarm` model, we have access to the posterior distribution
+of conditional expectations `posterior_epred()`, the posterior distribution of linear predictors `posterior_linpred()`, and the
+posterior predictive distribution `posterior_predict()`. Note that
+in the GLM framework, the conditional expectations are related to the posterior linear predictors,
+and so the conditional expectations are accessed directly without having to transform the linear
+predictor through the link function. Denoting a posterior draw of theta as $\theta^{(d)}$, our statistic
+of interest is:
+
+\begin{align*}
+  T^{(d)}(\mathbf{y}, \mathbf{\beta}) &= \sum_{i=1}^n \frac{(y_i - E[y_i|\theta^{(d)}])^2}{V[y_i|\theta^{(d)}]} \\
+\end{align*}
+
+
+
+
+The variance of $y_i$ conditioned on $\theta$ is dependent on the distribution
+of $y|\theta$. The following are these variance quantities:
+
+For Gaussian:
+
+\begin{align*}
+  E[y_i|\theta^{(d)}] &= \mu_i^{(d)} \\
+  V[y_i|\theta^{(d)}] &= \sigma_i^{2{(d)}} \\
+\end{align*}
+
+For Binomial:
+
+\begin{align*}
+  E[y_i|\theta^{(d)}] &= t_i p_i^{(d)} \\
+  V[y_i|\theta^{(d)}] &= t_i p_i^{(d)} (1 - p_i^{(d)}) \\
+\end{align*}
+
+For Poisson:
+
+\begin{align*}
+  E[y_i|\theta^{(d)}] &= \lambda_i^{(d)} \\
+  V[y_i|\theta^{(d)}] &= \lambda_i^{(d)} \\
+\end{align*}
+
+```{r, echo = FALSE}
+
+library(lubridate)
+library(tidyverse)
+library(rstanarm)
+library(lattice)
+data(sleepstudy, package = "lme4")
+data(cbpp, package = "lme4")
+
+
+```
+
+# Preemptive Check
+Checking that we can use posterior_epred() instead of transforming posterior_linpred()
+
+```{r, include = FALSE}
+
+# Confirming that conditional expectations are equivalent to applying inverse link
+# on linear predictors
+fit =
+  stan_glmer(cbind(incidence) ~ period + (1 | herd),
+             data = cbpp, family = poisson)
+
+
+
+# Create conditional expectations in 3 ways:
+
+E_1 <- invlogit(posterior_linpred(fit)) # "manually" transforming eta
+
+E_2 <- posterior_linpred(fit, transform = TRUE) # Using built in transformation of linpred
+
+E_3 <- posterior_epred(fit) # Using built in conditional expectation
+
+
+# Check equivalence
+
+mean(E_1 == E_2) # Sometimes equal?
+
+mean(E_2 == E_3) # Equal!
+
+
+# Check if this is due to rounding error
+
+mean(abs(E_1 - E_2) < 0.00000000001) # Always within a small amount, package implementation is probably more sophisticated
+
+```
+
+# Function
+
+```{r, include = FALSE}
+
+
+pearson_bpval <- function(fit, family, draws){
+  if (family == "binomial"){
+    
+    # Calculate number of trials
+    trials <- rowSums(fit$y)
+    
+    # Set up matrices of d x n for observed and simulated data
+    y_obs <- matrix(rep(fit$y[,1], draws), ncol = length(fit$y[,1]), nrow = draws, byrow = TRUE) 
+    y_new <- posterior_predict(fit, draws = draws)
+    
+    # Calculate conditional probabilty
+    p <- posterior_epred(fit, draws = draws)
+    
+    # Calculate expectation
+    E <- trials * p
+    
+    # Calculate variance
+    V <- trials * p * (1-p)
+    
+    # Calculate vectors of the statistic
+    T_obs <- rowSums((y_obs - E)^2 / V)
+    T_new <- rowSums((y_new - E)^2 / V)
+    
+    pval <- mean(T_obs > T_new)
+    
+    plot(T_obs, T_new)
+    abline(a = 0, b = 1)
+
+    
+    return(pval)
+    
+  }
+  
+    if (family == "gaussian"){
+    
+    # Set up matrices of d x n for observed and simulated data
+    y_obs <- matrix(rep(fit$y, draws), ncol = length(fit$y), nrow = draws, byrow = TRUE) 
+    y_new <- posterior_predict(fit, draws = draws)
+    
+    # Calculate conditional expectation
+    E <- posterior_epred(fit, draws = draws)
+    
+    # Calculate conditional variance
+    V <- as.matrix(fit)[, "sigma"][1:draws]^2
+    
+    # Calculate vectors of the statistic
+    T_obs <- rowSums((y_obs - E)^2 / V)
+    T_new <- rowSums((y_new - E)^2 / V)
+    
+    pval <- mean(T_obs > T_new)
+    
+    plot(T_obs, T_new)
+    abline(a = 0, b = 1)
+    
+    return(pval)
+    
+    }
+    
+    if (family == "poisson"){
+    
+    # Set up matrices of d x n for observed and simulated data
+    y_obs <- matrix(rep(fit$y, draws), ncol = length(fit$y), nrow = draws, byrow = TRUE) 
+    y_new <- posterior_predict(fit, draws = draws)
+    
+    # Calculate conditional expectation
+    E <- posterior_epred(fit, draws = draws)
+    
+    # Calculate conditional variance
+    V <- posterior_epred(fit, draws = draws)
+    
+    # Calculate vectors of the statistic
+    T_obs <- rowSums((y_obs - E)^2 / V)
+    T_new <- rowSums((y_new - E)^2 / V)
+    
+    pval <- mean(T_obs > T_new)
+    
+    plot(T_obs, T_new)
+    abline(a = 0, b = 1)
+
+    
+    return(pval)
+    
+    }
+  
+}
+
+
+
+
+```
+
+
+# Testing
+## "Good" Example
+
+```{r, include = FALSE}
+
+library(rstanarm)
+set.seed(123)
+data(sleepstudy, package = "lme4")
+
+# ------------------------------------------------------------------------------
+
+# Testing on a real dataset
+fit =
+  stan_glmer(Reaction ~ Days + (Days | Subject),
+             data = sleepstudy, family = gaussian)
+
+
+draws = 4000
+
+# ------------------------------------------------------------------------------
+
+# Set up matrices of d x n for observed and simulated data
+  y_obs <- matrix(rep(fit$y, draws), ncol = length(fit$y), nrow = draws, byrow = TRUE) 
+  y_new <- posterior_predict(fit, draws = draws)
+    
+# Calculate conditional expectation
+  E <- posterior_epred(fit, draws = draws)
+    
+# Calculate conditional variance
+  V <- as.matrix(fit)[, "sigma"][1:draws]^2
+    
+# Calculate vectors of the statistic
+  T_obs <- rowSums((y_obs - E)^2 / V)
+  T_new <- rowSums((y_new - E)^2 / V)
+    
+    pval <- mean(T_obs > T_new)
+    
+    plot(T_obs, T_new)
+    abline(a = 0, b = 1)
+    
+    pval <- mean(T_obs > T_new)
+    print(pval) # Around 0.5, expected
+
+
+
+```
+
+
+
+## "Bad" Example
+```{r, include = FALSE}
+# Succinct example
+library(rstanarm)
+set.seed(123)
+
+
+
+# ------------------------------------------------------------------------------
+# 10 groups of 10 each, outcome is completely independent of x and group structure
+mydat_bad <- data.frame(
+  y = runif(n = 100, min = 0, max = 10),
+  group = factor(rep(1:10, each = 10)),
+  x = runif(n = 100, min = -5, max = 5))
+
+# The outcome is uniform, not normal
+plot(mydat_bad$y)
+
+# Create fit
+myfit_bad =
+  stan_glmer(y ~ x + (1 | group),
+             data = mydat_bad, family = "gaussian")
+
+# ------------------------------------------------------------------------------
+
+draws = 4000
+fit <- myfit_bad
+
+# Set up matrices of d x n for observed and simulated data
+  y_obs <- matrix(rep(fit$y, draws), ncol = length(fit$y), nrow = draws, byrow = TRUE) 
+  y_new <- posterior_predict(fit, draws = draws)
+    
+# Calculate conditional expectation
+  E <- posterior_epred(fit, draws = draws)
+    
+# Calculate conditional variance
+  V <- as.matrix(fit)[, "sigma"][1:draws]^2
+    
+# Calculate vectors of the statistic
+  T_obs <- rowSums((y_obs - E)^2 / V)
+  T_new <- rowSums((y_new - E)^2 / V)
+    
+    pval <- mean(T_obs > T_new)
+    
+    plot(T_obs, T_new)
+    abline(a = 0, b = 1)
+    
+    pval <- mean(T_obs > T_new)
+    print(pval) # Around 0.5, despite outcome indep of x and not even normal
+
+
+
+```
+
+
+
+
+
+
+# Mean Structure Focus
+
+Here, we assess model fit using Bayes P-values based on loess curves
+fit to the predicted residuals and observed residuals.
+
+Define $y_i^{(d)}$ as the $i$th posterior predicted value from the $d$th draw of $\theta$. Similarly, define $\mu_i^{(d)}$ as the  
+
+
+
+
+```{r, include = FALSE}
+
+library(lubridate)
+library(tidyverse)
+library(rstanarm)
+library(patchwork)
+
+N = 200
+
+set.seed(2026)
+data = 
+  list(
+    good = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = x + rnorm(n())),
+    
+    quad_normal = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = x + x^2 + rnorm(n())),
+    
+    very_quad_normal = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = x + 25*x^2 + rnorm(n())),
+    
+    quad_unif = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = x + 3*x^2 + runif(n())),
+    
+    none_normal = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = rnorm(n())),
+    
+    none_unif = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = runif(n()))
+  )
+
+vis <- lapply(
+  names(data),
+  function(j){
+    data[[j]] |> 
+      ggplot() +
+      geom_point(aes(y=y,x=x)) +
+      theme_minimal(base_size = 18) +
+      ggtitle(j)
+  }
+) |> 
+  wrap_plots()
+  
+
+fits =
+  lapply(
+    data,
+    function(X){
+      stan_lmer(y ~ x + (1 | gr),
+                data = X,
+                cores = 4)
+    })
+beepr::beep(3)
+
+
+lmer_bpv = function(fit){
+  # Get response variable
+  y = 
+    fit$data[,all.vars(fit$formula)[1]]
+  
+  # Get draws of fitted values
+  E_y = 
+    posterior_epred(fit)
+  
+  # Get draws of residuals
+  res = 
+    matrix(y,
+           nrow(E_y),
+           NROW(y),
+           byrow = T) - E_y
+  
+  # Get draws of response
+  y_pred = 
+    posterior_predict(fit)
+  
+  # Get residuals for response draws
+  res_pred = 
+    y_pred - E_y
+  
+  
+  # Create helper function to fit loess
+  helper = function(i){
+     l1 = 
+       loess(res[i,] ~ E_y[i,],
+             span = 0.6) |> 
+       predict()
+     l2 = 
+       loess(res_pred[i,] ~ E_y[i,],
+             span = 0.6) |> 
+       predict()
+     
+     sum(l1^2) > sum(l2^2)
+  }
+  
+  # Compute bayesian p-value
+  mean(sapply(1:nrow(res),helper))
+}
+
+bpv =
+  lapply(fits,
+         lmer_bpv)
+beepr::beep(3)
+bpv
+
+
+
+x <- runif(n = 10, 0, 10)
+beta <- 2
+y <- x * beta + rnorm(n = 10, sd = 10)
+
+mymod <- loess(y ~ x)
+
+plot(x, predict(mymod), type = "l")
+
+
+
+
+```

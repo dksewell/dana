@@ -1,0 +1,22 @@
+Package: dana
+Title: DANA Helper
+Version: 0.0.0.9000
+Authors@R: 
+    person("Abran", "Nicolas", , "abran-nicolas@uiowa.edu", role = c("aut", "cre"))
+Description: 
+  Helper packge for the DANA webapp. Contains functions for organizing data processing steps for different analysis types. 
+License: `use_mit_license()`
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends: 
+    R (>= 3.5)
+LazyData: true
+Imports:
+	ggplot2,
+	bayesics,
+	gt,
+	readr,
+	readxl,
+	tools,
+	shiny,
+Config/roxygen2/version: 8.1.0

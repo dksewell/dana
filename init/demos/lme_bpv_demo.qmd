@@ -1,0 +1,307 @@
+---
+title: "lme_bpv Demo"
+format: html
+author: AN
+---
+
+
+
+
+# Mean Structure Focus
+
+Here, we assess model fit using Bayes P-values based on loess curves
+fit to the predicted residuals and observed residuals.
+
+Define $y_i^{(d)}$ as the $i$th posterior predicted value from the $d$th posterior draw of $\theta$. Similarly, define $\mu_i^{(d)} = E[y_i|\theta^{(d)}]$ as the expected value of $y_i$ under the $d$th posterior draw of $\theta$.
+
+Consider the $n$ observed residuals and the $n$ predicted residuals:
+
+\begin{align*}
+  r_{i, obs}^{(d)} = y_i - \mu_i^{(d)} \\
+  r_{i, pred}^{(d)} = y_i^{(d)} - \mu_i^{(d)} \\
+\end{align*}
+
+If we fit two loess curves:
+
+\begin{align*}
+
+  \text{LOESS}(\mathbf{r}_{obs}^{(d)}, \boldsymbol{\mu}^{(d)}) \\
+  \text{LOESS}(\mathbf{r}_{pred}^{(d)}, \boldsymbol{\mu}^{(d)}) \\
+
+\end{align*}
+
+These two models give rise to the predicted residuals: $\hat{\mathbf{r}}_{obs}^{(d)}$
+and $\hat{\mathbf{r}}_{pred}^{(d)}$. Define the statistics
+
+\begin{align*}
+  T_{obs}^{(d)} = \frac{1}{n}\sum_{i = 1}^n \left(\hat{r}_{obs}^{(d)}\right)^2 \\ 
+  T_{pred}^{(d)} = \frac{1}{n}\sum_{i = 1}^n \left(\hat{r}_{pred}^{(d)}\right)^2 \\
+\end{align*}
+
+The bayesian p-value is given by
+
+\begin{align*}
+  \frac{1}{D}\sum_{d = 1}^{D} I(T_{pred}^{(d)} > T_{obs}^{(d)})
+\end{align*}
+
+# Function
+
+```{r}
+
+
+lme_bpv <- function(object){
+
+  # Response
+  y_obs <- object$data[,all.vars(object$formula)[1]]
+
+  # Predicted expectations
+  mu <- rstanarm::posterior_epred(object)
+
+  # Response vs fitted residuals
+  res_obs <- matrix(data = y_obs,
+                nrow = nrow(mu),
+                ncol = NROW(y_obs),
+                byrow = T) - mu
+
+  # Predicted response
+  y_pred <- posterior_predict(object)
+
+  # Predicted response vs fitted residuals
+  res_pred <- y_pred - mu
+
+  loess_obs <- function(i){
+
+    # Fit loess to residuals vs fitted
+      loess_fit = loess(res_obs[i,] ~ mu[i,]) |> predict()
+
+      sum(loess_fit^2)
+      
+  }
+
+  loess_pred <- function(i){
+
+    # Fit loess to residuals vs fitted
+    loess_fit = loess(res_pred[i,] ~ mu[i,]) |> predict()
+
+    sum(loess_fit^2)
+
+  }
+
+  T_obs <- sapply(1:nrow(res_obs), loess_obs)
+  T_pred <- sapply(1:nrow(res_pred), loess_pred)
+
+  
+  rslt <- list(
+    bpval = mean(T_obs > T_pred),
+    bpplot = 
+      ggplot(data.frame(T_obs, T_pred)) + 
+      geom_point(mapping = aes(x = T_obs, y = T_pred)) +
+      geom_abline(slope = 1, intercept = 0)
+  )
+  
+  return(rslt)
+
+  }
+
+
+
+
+
+```
+
+# Example
+
+```{r}
+
+library(tidyverse)
+library(rstanarm)
+
+# Model fit
+
+N = 200
+
+good =
+  tibble(x = runif(N)) |>
+  mutate(gr = rep(1:10,each = n() / 10),
+         y = x + rnorm(n()))
+
+gfit <- stan_lmer(y ~ x + (1 | gr), data = good)
+
+# ------------------------------------------------------------------------------
+
+  # Response
+  y_obs <- gfit$data[,all.vars(gfit$formula)[1]]
+
+  # Predicted expectations
+  mu <- rstanarm::posterior_epred(gfit)
+
+  # Response vs fitted residuals
+  res_obs <- matrix(data = y_obs,
+                nrow = nrow(mu),
+                ncol = NROW(y_obs),
+                byrow = T) - mu
+
+  # Predicted response
+  y_pred <- posterior_predict(gfit)
+
+  # Predicted response vs fitted residuals
+  res_pred <- y_pred - mu
+
+  # ----------------------------------------
+  # LOESS curves
+  
+    # Fit loess to residuals vs fitted
+      loess_fit_1 = loess(res_obs[1,] ~ mu[1,]) |> predict()
+      sum(loess_fit_1^2)
+
+    # Fit loess to residuals vs fitted
+      loess_fit_2 = loess(res_pred[1,] ~ mu[1,]) |> predict()
+      sum(loess_fit_2^2)
+
+    # Show loess curves
+    plot(mu[1,], res_obs[1,], col = "blue", ylab = "Residuals")
+    points(mu[1,], res_pred[1,] , col = "red")
+    data.frame(x = mu[1,], y = loess_fit_1) |> arrange(x) |> lines(, col = "blue")
+    data.frame(x = mu[1,], y = loess_fit_2) |> arrange(x) |> lines(, col = "red")
+    legend("topleft",legend = c("obs","pred"), col = c("blue","red"), fill = c("blue","red"))
+    
+    # Isolate curves
+    
+    plot(mu[1,], loess_fit_1, col = "blue", ylab = "Residuals")
+    points(mu[1,], loess_fit_2, col = "red")
+
+    # Square residuals
+    plot(mu[1,], loess_fit_1^2, col = "blue", ylab = "Squared Residuals")
+    points(mu[1,], loess_fit_2^2, col = "red")
+    
+    lme_bpv(gfit)
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+# Dan's Code
+
+```{r}
+
+
+bpv_d = function(fit){
+  # Get response variable
+  y = 
+    fit$data[,all.vars(fit$formula)[1]]
+  
+  # Get draws of fitted values
+  E_y = 
+    posterior_epred(fit)
+  
+  # Get draws of residuals
+  res = 
+    matrix(y,
+           nrow(E_y),
+           NROW(y),
+           byrow = T) - E_y
+  
+  # Get draws of response
+  y_pred = 
+    posterior_predict(fit)
+  
+  # Get residuals for response draws
+  res_pred = 
+    y_pred - E_y
+  
+  
+  # Create helper function to fit loess
+  helper = function(i){
+     l1 = 
+       loess(res[i,] ~ E_y[i,],
+             span = 0.6) |> 
+       predict()
+     l2 = 
+       loess(res_pred[i,] ~ E_y[i,],
+             span = 0.6) |> 
+       predict()
+     
+     sum(l1^2) > sum(l2^2)
+  }
+  
+  # Compute bayesian p-value
+  mean(sapply(1:nrow(res),helper))
+}
+
+```
+
+# Testing/Simulation
+
+Testing bpv "rejection rate", (if term is applicable). That is,
+determine how often under a linear mixed model, the model is deemed
+"not fitting", under correct/incorrect model specifications.
+
+
+```{r}
+
+lin_mod <- vector()
+none_unif_mod <- vector()
+very_quad_normal_mod <- vector()
+
+lin =
+  tibble(x = runif(N)) |>
+  mutate(gr = rep(1:10,each = n() / 10),
+         y = x + rnorm(n()))
+
+none_unif = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = runif(n()))
+
+very_quad_normal = 
+      tibble(x = runif(N)) |>
+      mutate(gr = rep(1:10,each = n() / 10),
+             y = x + 25*x^2 + rnorm(n()))
+
+for (i in 1:80){
+  
+N = 200
+
+lin =
+  tibble(x = runif(N)) |>
+  mutate(gr = rep(1:10,each = n() / 10),
+         y = x + rnorm(n()))
+
+fit1 <- stan_lmer(y ~ x + (1 | gr), data = good, refresh = 0)
+fit2 <- stan_lmer(y ~ x + (1 | gr), data = none_unif, refresh = 0)
+fit3 <- stan_lmer(y ~ x + (1 | gr), data = very_quad_normal, refresh = 0)
+
+lin_mod[i] <- lme_bpv(fit1)$bpval
+none_unif_mod[i] <- lme_bpv(fit2)$bpval
+very_quad_normal_mod[i] <- lme_bpv(fit3)$bpval
+
+
+}
+
+
+plot(lin_mod)
+plot(none_unif_mod)
+plot(very_quad_normal_mod)
+
+
+
+
+
+
+
+
+
+```
+

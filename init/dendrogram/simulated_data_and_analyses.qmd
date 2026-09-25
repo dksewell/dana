@@ -1,0 +1,949 @@
+---
+title: "Simulate data to test shiny app"
+format: 
+  html:
+    toc: true
+    toc-location: left
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=12,
+                      fig.height=8,
+                      results='verbatim',
+                      cache=TRUE,
+                      message=F,
+                      warning=F,
+                      progress=FALSE,
+                      echo=TRUE)
+```
+
+```{r}
+library(mvtnorm)
+library(Matrix)
+library(tidyverse)
+library(magrittr)
+library(bayesforecast)
+library(rstanarm)
+library(ggplot2)
+library(plotly)
+library(factoextra)
+library(flextable)
+library(bridgesampling)
+
+sim_data = list()
+fits = list()
+```
+
+
+# Cross-sectional no regression
+
+## Simulate data
+Note to SB: The covariance matrices derived from the outer(...) just correspond to an AR(1) process with different correlation parameters.   
+```{r}
+sim_data$crosssec_no_regr = 
+  rmvnorm(100,
+          mean = numeric(5),
+          sigma = bdiag(outer(1:2,1:2,
+                              function(x,y){0.6^abs(x-y)}),
+                        outer(1:3,1:3,
+                              function(x,y){(-0.2)^abs(x-y)})) %>% 
+            as.matrix()) %>% 
+  rbind(rmvnorm(200,
+                mean = numeric(5),
+                sigma = bdiag(outer(1:3,1:3,
+                                    function(x,y){0.8^abs(x-y)}),
+                              outer(1:2,1:2,
+                                    function(x,y){(0.1)^abs(x-y)})) %>% 
+                  as.matrix())) %>% 
+  as_tibble() %>% 
+  rename_all(function(x) gsub("V","y",x)) %>% 
+  mutate(grouping_variable = rep(c("G1","G2"),c(100,200)))
+```
+
+## Univariate analyses
+```{r}
+cont_vars = 
+  colnames(sim_data$crosssec_no_regr)[which(sim_data$crosssec_no_regr %>% 
+                                              sapply(class) %in%
+                                              c("numeric","integer"))]
+cat_vars = 
+  colnames(sim_data$crosssec_no_regr)[which(sim_data$crosssec_no_regr %>% 
+                                              sapply(class) %in%
+                                              c("character","factor"))]
+
+plots = list(cont = list(),
+             cat = list())
+
+for(v in cont_vars){
+  plots$cont[[v]] = 
+    sim_data$crosssec_no_regr %>% 
+    ggplot(aes_string(x = v)) +
+    geom_density(adjust = 2,
+                 fill = "steelblue") +
+    labs(x = v, 
+         y = "") +
+    theme_classic() +
+    theme(axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 15),
+          axis.text.x = element_text(size = 18),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
+}
+for(v in cat_vars){
+  plots$cat[[v]] = 
+    sim_data$crosssec_no_regr %>% 
+      ggplot(aes_string(x = v)) +
+      geom_bar(fill = "steelblue") +
+      labs(x = "Grouping variable", 
+           y = "") +
+      theme_classic() +
+      theme(axis.title.x = element_text(size = 20),
+            axis.title.y = element_text(size = 15),
+            axis.text.x = element_text(size = 18),
+            axis.text.y = element_text(size = 18))
+}
+
+for(i in names(plots)){
+  for(j in names(plots[[i]]))
+  print(plots[[i]][[j]])
+}
+
+```
+
+## Multivariate
+Principle Components Analysis:
+```{r}
+data_pca = 
+  sim_data$crosssec_no_regr %>% 
+  select(all_of(cont_vars)) %>% 
+  princomp()
+```
+
+### Screeplot
+```{r}
+data_pca %>% 
+  fviz_screeplot() +
+  theme_classic() +  # Use a classic theme
+  theme(
+    plot.title = element_text(size = 20),  # Increase title size
+    axis.title = element_text(size = 20),  # Increase axis labels size
+    axis.text = element_text(size = 18)    # Increase axis text size
+  )
+```
+
+### Variables only
+You can play around with the arguments here to vary the appearance, increase axis labels, etc.
+```{r}
+data_pca %>% 
+  fviz_pca_var(col.var="contrib",
+               gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+               repel = TRUE )
+```
+
+### Observations only
+```{r}
+data_pca %>% 
+  fviz_pca_ind(habillage = sim_data$crosssec_no_regr$grouping_variable,
+               label = "none")
+```
+
+
+
+# Retro cohort no regression
+
+## Simulate data
+```{r}
+sim_data$retro_no_regr = 
+  tibble(subject_id = 
+           rep(1:100, each = 5),
+         time = rep(1:5,100)) %>% 
+  group_by(subject_id) %>% 
+  mutate(y1 = rbinom(n(),1,
+                     1.0 / (1.0 + exp(2 - 0.5 * time)) ),
+         y2 = rnorm(n(),
+                    2 * (-1)^(time > 2))) %>% 
+  ungroup()
+```
+
+## Spaghetti plots
+```{r}
+sim_data$retro_no_regr %>% 
+  ggplot(aes(x = time,
+             y = y1,
+             group = subject_id)) +
+  geom_jitter(height = 0.05,width = 0.05) +
+  geom_line() +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18))
+```
+```{r}
+sim_data$retro_no_regr %>% 
+  ggplot(aes(x = time,
+             y = y2,
+             group = subject_id)) +
+  geom_point() +
+  geom_line() +
+  theme_classic() +
+  theme(axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18))
+
+```
+
+
+
+
+# Prospective cohort no regression
+Same as above.
+
+
+
+# Case-control (Unmatched)
+
+## Simulate data
+```{r}
+sim_data$case_control = 
+  tibble(status = 
+           rep(c("control","case"),
+               c(500, 100))) %>%
+  mutate(covariate = rnorm(n()),
+         outcome = 
+           rbinom(600,
+                  1,
+                  rep(c(0.2,0.4),
+                      c(500,100))))
+```
+
+## Analysis - Logistic Regression
+```{r results = "hide"}
+set.seed(2024)
+fits$case_control = 
+  stan_glm(outcome ~ covariate + status,
+           data = sim_data$case_control,
+           family = "binomial")
+```
+
+```{r}
+tibble(Covariate = 
+         names(coef(fits$case_control)),
+       Estimate = coef(fits$case_control)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$case_control,
+                                         prob = 0.95))) %>% 
+  flextable() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs()
+```
+
+
+
+# Case-control (Matched)
+
+## Simulate data
+```{r}
+logit = function(x) log(x / (1.0 - x))
+expit = function(x) 1.0 / (1.0 + exp(-x))
+
+sim_data$case_control_matched = 
+  tibble(status = 
+           rep(rep(c("control","case"),
+                   c(5,1)),
+               100),
+         group_id = rep(1:100,each = 5+1),
+         latent_random_effect = rep(rnorm(100,sd=0.05),each = 5+1)) %>%
+  mutate(covariate = rnorm(n()),
+         outcome = 
+           rbinom(600,
+                  1,
+                  expit( logit(0.2) + # Intercept
+                           (logit(0.4) - logit(0.2)) * (status == "case") +# Slope
+                           latent_random_effect) ) )
+```
+
+## Analysis - Conditional Logistic Regression
+```{r results = "hide"}
+set.seed(2024)
+fits$case_control_matched = 
+  stan_clogit(outcome ~ covariate + status,
+              strata = group_id,
+              data = sim_data$case_control_matched)
+```
+
+
+```{r}
+tibble(Covariate = 
+         names(coef(fits$case_control_matched)),
+       Estimate = coef(fits$case_control_matched)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$case_control_matched,
+                                         prob = 0.95))) %>% 
+  flextable() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs()
+```
+
+
+
+# Cross-sectional regression
+
+## Continuous
+### Simulate data
+```{r}
+sim_data$crosssec_regr = list()
+sim_data$crosssec_regr$continuous = 
+  tibble(x1 = rnorm(100),
+         x2 = rnorm(100)) %>% 
+  mutate(log_y = -1 + 1.5*x1 + rnorm(n())) %>% 
+  mutate(y = exp(log_y))
+```
+
+### Analysis - linear regression
+```{r results = "hide"}
+set.seed(2024)
+fits$linreg = list()
+fits$linreg$untransformed = 
+  stan_glm(y ~ x1 + x2,
+           data = sim_data$crosssec_regr$continuous,
+           diagnostic_file = file.path(tempdir(), "delete_me-1.csv"))
+
+transformation = NULL
+# Try transformations.
+if(all(sim_data$crosssec_regr$continuous$y > 0)){
+  set.seed(2024)
+  fits$linreg$log = 
+    stan_glm(log_y ~ x1 + x2,
+             data = 
+               sim_data$crosssec_regr$continuous %>% 
+               mutate(log_y = log(y)),
+             diagnostic_file = file.path(tempdir(), "delete_me-2.csv"))
+  transformation = "log"
+}else{
+  if(all(sim_data$crosssec_regr$continuous$y >= 0)){
+  set.seed(2024)
+  fits$linreg$asinh = 
+    stan_glm(asinh_y ~ x1 + x2,
+             data = 
+               sim_data$crosssec_regr$continuous %>% 
+               mutate(asinh_y = asinh(y)),
+           )
+    transformation = "asinh"
+  }
+}
+
+if(length(fits$linreg) > 1){
+  set.seed(2024)
+  bf = 
+    bayes_factor(bridge_sampler(fits$linreg[[2]]),
+                 bridge_sampler(fits$linreg[[1]]))
+  if(bf$bf < ifelse(bf$log,log(3.2),3.2)){# Jeffrey's criterion
+    fits$linreg = 
+    fits$linreg$untransformed
+    transformation = NULL
+  }else{
+    fits$linreg = 
+    fits$linreg[[2]]
+  }
+  
+}else{
+  fits$linreg = 
+    fits$linreg$untransformed
+}
+
+```
+
+```{r}
+if(is.null(transformation)){
+  
+  tibble(Covariate = 
+         names(coef(fits$linreg)),
+       Estimate = coef(fits$linreg)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$linreg,
+                                         prob = 0.95,
+                                         pars = names(coef(fits$linreg))))) %>% 
+    flextable() %>%  
+    autofit() %>% 
+    colformat_double(digits = 3) %>% 
+    theme_booktabs()
+  
+  cat("The regression coefficients are reported in terms of the change in the mean of the outcome due to a unit increase in the covariate, holding all other covariates constant.")
+  
+}else{
+  
+  if(transformation == "log"){
+    
+    covariate_names = 
+      setdiff(names(coef(fits$linreg)),
+              "(Intercept)")
+    tibble(Covariate = 
+             covariate_names,
+           Estimate = coef(fits$linreg)[-1]) %>% 
+      bind_cols(as_tibble(posterior_interval(fits$linreg,
+                                             prob = 0.95,
+                                             pars = covariate_names ))) %>% 
+      mutate(decrease_est = Estimate < 0,
+             decrease_lb = `2.5%` < 0,
+             decrease_ub = `97.5%` < 0) %>% 
+      mutate(Estimate = 
+               ifelse(decrease_est,
+                      paste(round((1.0 - exp(Estimate)) * 100,1),
+                            "% decrease",
+                            sep=""),
+                      paste(round((exp(Estimate) - 1.0) * 100,1),
+                      "% increase",
+                      sep="")),
+             `95% CI` =
+               ifelse(!decrease_lb,
+                      paste("(",
+                            round((exp(`2.5%`) - 1.0) * 100,1),
+                            "% increase, ",
+                            round((exp(`97.5%`) - 1.0) * 100,1),
+                            "% increase)",
+                            sep = ""),
+                      ifelse(decrease_ub,
+                             paste("(",
+                                   round((1.0 - exp(`97.5%`)) * 100,1),
+                                   "% decrease, ",
+                                   round((1.0 - exp(`2.5%`)) * 100,1),
+                                   "% decrease)",
+                                   sep = ""),
+                              paste("(",
+                                    round((1.0 - exp(`2.5%`)) * 100,1),
+                                    "% decrease, ",
+                                    round((exp(`97.5%`) - 1.0) * 100,1),
+                                    "% increase)",
+                                    sep = "")))
+             ) %>% 
+      select(Covariate, Estimate, `95% CI`) %>% 
+      flextable() %>% 
+      autofit() %>% 
+      colformat_double(digits = 3) %>% 
+      theme_booktabs() %>% 
+      print()
+  
+      cat("The regression coefficients are reported in terms of the % change in the mean of the outcome due to a unit increase in the covariate, holding all other covariates constant.")
+  
+    }else{
+      tibble(Covariate = 
+           names(coef(fits$linreg)),
+         Estimate = coef(fits$linreg)) %>% 
+    bind_cols(as_tibble(posterior_interval(fits$linreg,
+                                           prob = 0.95,
+                                           pars = names(coef(fits$linreg))))) %>% 
+        flextable() %>%  
+        autofit() %>% 
+        colformat_double(digits = 3) %>% 
+        theme_booktabs()
+  }
+}
+```
+
+## Count
+
+### Simulate data
+```{r}
+sim_data$crosssec_regr$count = 
+  tibble(x1 = rnorm(100),
+         x2 = rnorm(100)) %>% 
+  mutate(y = rnbinom(100,
+                     mu = 10 * exp(0.25 * x1),
+                     size = 5))
+```
+
+### Analysis - Generalized linear regression
+```{r results = "hide"}
+set.seed(2024)
+fits$count = list()
+fits$count$poisson = 
+  stan_glm(y ~ x1 + x2,
+           data = sim_data$crosssec_regr$count,
+           family = poisson,
+           diagnostic_file = file.path(tempdir(), "delete_me-1.csv"))
+
+fits$count$nb = 
+  stan_glm(y ~ x1 + x2,
+           data = sim_data$crosssec_regr$count,
+           family = neg_binomial_2,
+           diagnostic_file = file.path(tempdir(), "delete_me-2.csv"))
+
+bf = 
+  bayes_factor(bridge_sampler(fits$count$nb),
+               bridge_sampler(fits$count$poisson))
+
+if(bf$bf < ifelse(bf$log,log(3.2),3.2)){# Jeffrey's criterion
+  fits$count = 
+    fits$count$poisson
+}else{
+  fits$count = 
+    fits$count$nb
+}
+```
+
+```{r}
+covariate_names = 
+  setdiff(names(coef(fits$count)),
+          "(Intercept)")
+tibble(Covariate = 
+         covariate_names,
+       Estimate = coef(fits$count)[-1]) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$count,
+                                         prob = 0.95,
+                                         pars = covariate_names ))) %>% 
+  mutate(decrease_est = Estimate < 0,
+         decrease_lb = `2.5%` < 0,
+         decrease_ub = `97.5%` < 0) %>% 
+  mutate(Estimate = 
+           ifelse(decrease_est,
+                  paste(round((1.0 - exp(Estimate)) * 100,1),
+                        "% decrease",
+                        sep=""),
+                  paste(round((exp(Estimate) - 1.0) * 100,1),
+                        "% increase",
+                        sep="")),
+         `95% CI` =
+           ifelse(!decrease_lb,
+                  paste("(",
+                        round((exp(`2.5%`) - 1.0) * 100,1),
+                        "% increase, ",
+                        round((exp(`97.5%`) - 1.0) * 100,1),
+                        "% increase)",
+                        sep = ""),
+                  ifelse(decrease_ub,
+                         paste("(",
+                               round((1.0 - exp(`97.5%`)) * 100,1),
+                               "% decrease, ",
+                               round((1.0 - exp(`2.5%`)) * 100,1),
+                               "% decrease)",
+                               sep = ""),
+                         paste("(",
+                               round((1.0 - exp(`2.5%`)) * 100,1),
+                               "% decrease, ",
+                               round((exp(`97.5%`) - 1.0) * 100,1),
+                               "% increase)",
+                               sep = "")))
+  ) %>% 
+  select(Covariate, Estimate, `95% CI`) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() %>% 
+  print()
+
+cat("The regression coefficients are reported in terms of the % change in the mean of the outcome due to a unit increase in the covariate, holding all other covariates constant.")
+```
+
+## Binary
+
+### Simulate data
+```{r}
+sim_data$crosssec_regr$binary =
+  tibble(x1 = rnorm(250),
+         x2 = rnorm(250)) %>%
+  mutate(y = rbinom(250,
+                    1,
+                    expit(-2.0 + 0.5 * x1)))
+```
+
+### Analysis - Generalized linear regression
+```{r results = "hide"}
+fits$binary = 
+  stan_glm(y ~ x1 + x2,
+           data = sim_data$crosssec_regr$binary,
+           family = binomial)
+```
+
+```{r}
+covariate_names = 
+  setdiff(names(coef(fits$binary)),
+          "(Intercept)")
+tibble(Covariate = 
+         covariate_names,
+       Estimate = coef(fits$count)[-1]) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$count,
+                                         prob = 0.95,
+                                         pars = covariate_names ))) %>% 
+  mutate_if(is.numeric,exp) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+
+cat("These regression results can be interpreted in terms of the odds ratio due to a unit increase in the covariate, keeping all other covariates constant.")
+```
+
+
+## Ordinal
+
+### Simulate data
+```{r}
+sim_data$crosssec_regr$ordinal =
+  tibble(x1 = rnorm(250),
+         x2 = rnorm(250)) %>%
+  mutate(cum_prob_cat1 = expit(-1 - 0.5 * x1),
+         cum_prob_cat2 = expit(0 - 0.5 * x1),
+         cum_prob_cat3 = expit(1 - 0.5 * x1),
+         cum_prob_cat4 = 1.0) %>% 
+  mutate(prob_cat1 = cum_prob_cat1,
+         prob_cat2 = cum_prob_cat2 - cum_prob_cat1,
+         prob_cat3 = cum_prob_cat3 - cum_prob_cat2,
+         prob_cat4 = cum_prob_cat4 - cum_prob_cat3,
+         y = 0L)
+for(i in 1:nrow(sim_data$crosssec_regr$ordinal)){
+  sim_data$crosssec_regr$ordinal$y[i] = 
+    sample(4,1,
+           prob = 
+             sim_data$crosssec_regr$ordinal[i,] %>% 
+             select(prob_cat1:prob_cat4) %>% 
+             unlist())
+}
+sim_data$crosssec_regr$ordinal %<>%
+  select(x1,x2,y)
+```
+
+### Analysis - Proportional odds logistic regression
+```{r results = "hide"}
+set.seed(2024)
+fits$ordinal = 
+  stan_polr(y ~ x1 + x2,
+            data = 
+              sim_data$crosssec_regr$ordinal %>% 
+              mutate(y = factor(y,ordered = TRUE)),
+            prior = R2(0.5,
+                       what = "mean"))
+```
+
+```{r}
+tibble(Covariate = 
+         names(coef(fits$ordinal)),
+       Estimate = coef(fits$ordinal)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$ordinal,
+                                         prob = 0.95,
+                                         pars = names(coef(fits$ordinal)) ))) %>% 
+  mutate_if(is.numeric,exp) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+
+cat("These regression results can be interpreted in terms of odds ratios corresponding to the odds of having a higher value of the outcome due to a unit increase in the covariate, keeping all other covariates constant.")
+```
+
+
+# Retro cohort regression
+
+## Simulate data
+```{r}
+sim_data$retro_regr = 
+  tibble(subject_id = 
+           rep(1:100, each = 5),
+         time = rep(1:5,100),
+         x1 = rep(rnorm(100),each = 5),
+         x2 = rep(rnorm(100),each = 5),
+         re_compound_symmetry = rep(rnorm(100),each = 5)) %>% 
+  group_by(subject_id) %>% 
+  mutate(y = rnorm(n(),
+                   mean = 2 + x1 + re_compound_symmetry - 0.1 * time^2)) %>% 
+  ungroup()
+```
+
+## Analysis - Mixed effects regression
+```{r results = "hide"}
+set.seed(2024)
+fits$retro_regr = 
+  stan_glmer(y ~ time + I(time^2) + x1 + x2 + (1 | subject_id),
+             data = sim_data$retro_regr)
+```
+
+```{r}
+tibble(Covariate = 
+         names(fixef(fits$retro_regr)),
+       Estimate = fixef(fits$retro_regr)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$retro_regr,
+                                         prob = 0.95,
+                                         pars = names(fixef(fits$retro_regr)) ))) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+```
+
+
+
+# Prospective cohort regression
+
+Same as above.
+
+
+# Interrupted time-series
+
+## Simulate data
+```{r}
+sim_data$itt = 
+  tibble(time = 1:200,
+         intervention = rep(c("No","Yes"),
+                            c(50,150)),
+         x = rnorm(200),
+         y = 0.0)
+for(tt in 2:nrow(sim_data$itt)){
+  sim_data$itt$y[tt] = 
+    1.0 * (sim_data$itt$intervention[tt] == "Yes")  + 
+    0.0 * sim_data$itt$x[tt] +
+    sim_data$itt$time[tt] / nrow(sim_data$itt) +
+    0.5 * (sim_data$itt$y[tt - 1] -
+             0.0 * sim_data$itt$x[tt] +
+             sim_data$itt$time[tt] / nrow(sim_data$itt)
+             ) +
+    rnorm(1)
+}
+```
+
+## Visualize data
+```{r}
+plot(sim_data$itt$y,
+     type = 'l',
+     bty = 'l',
+     lwd = 3,
+     xlab = "Time",
+     ylab = "Outcome",
+     cex.axis = 2,
+     cex.lab = 2)
+polygon(x = c(min(which(sim_data$itt$intervention == "Yes")),
+              nrow(sim_data$itt),
+              nrow(sim_data$itt),
+              min(which(sim_data$itt$intervention == "Yes"))),
+        y = c(min(sim_data$itt$y),
+              min(sim_data$itt$y),
+              max(sim_data$itt$y),
+              max(sim_data$itt$y)),
+        border = NA,
+        col = adjustcolor("steelblue",0.5))
+axis(3,
+     at = median(which(sim_data$itt$intervention == "No")),
+     labels = "Pre-intervention",
+     cex.axis = 2,
+     tick = FALSE,
+     col.axis = gray(0.4))
+axis(3,
+     at = median(which(sim_data$itt$intervention == "Yes")),
+     labels = "Post-intervention",
+     cex.axis = 2,
+     tick = FALSE,
+     col.axis = "steelblue")
+```
+
+## Analysis - Time series
+```{r results = "hide"}
+set.seed(2024)
+X_matrix = 
+  model.matrix(~intervention + x + time,
+               data =
+                 sim_data$itt %>%
+                 mutate_if(is.numeric,scale))[,-1]
+fits$itt = list()
+fits$itt$ar1 = 
+  stan_sarima(drop(scale(sim_data$itt$y)),
+              order = c(1,0,0),
+              xreg = X_matrix,
+              prior_breg = bayesforecast::normal(0,2.5))
+fits$itt$ma1 =
+  stan_sarima(drop(scale(sim_data$itt$y)),
+              order = c(0,1,0),
+              xreg = X_matrix,
+              prior_breg = bayesforecast::normal(0,2.5))
+  
+bf = 
+  bayes_factor(fits$itt$ar1,
+               fits$itt$ma1)
+
+if(bf$bf > ifelse(bf$log,log(1),1)){# Jeffrey's criterion
+  fits$itt = 
+    fits$itt$ar1
+}else{
+  fits$itt = 
+    fits$itt$ma1
+}
+
+```
+
+```{r}
+summary(fits$itt,
+        prob = 0.95)[grep("breg",
+                       row.names(summary(fits$itt))),
+                  c("mean","2.5%","97.5%")] %>% 
+  as_tibble() %>% 
+  mutate_all(~ .x * 
+               sd(sim_data$itt$y) / 
+               apply(model.matrix(~intervention + x + time,
+                                  data = sim_data$itt)[,-1],
+                     2,sd)) %>%
+  rename(Estimate = mean) %>% 
+  mutate(Covariate = colnames(X_matrix)) %>% 
+  relocate(Covariate)
+```
+
+
+
+# Stepped-wedge
+
+## Simulate data
+```{r}
+sim_data$wedge = 
+  tibble(subject_id = 
+           rep(1:100, each = 6),
+         time = rep(1:6,100),
+         x1 = rep(rnorm(100),each = 6),
+         x2 = rep(rnorm(100),each = 6),
+         re_compound_symmetry = rep(rnorm(100),each = 6),
+         treatment = 
+           c(rep(rep(0:1,c(1,5)), 20),
+             rep(rep(0:1,c(2,4)), 20),
+             rep(rep(0:1,c(3,3)), 20),
+             rep(rep(0:1,c(4,2)), 20),
+             rep(rep(0:1,c(5,1)), 20))) %>% 
+  mutate(y = treatment + 0.5 * x1 - time + re_compound_symmetry + rnorm(n()))
+
+# Check to make sure data was produced correctly:
+sim_data$wedge %>% 
+  group_by(time) %>% 
+  summarize(s = sum(treatment))
+```
+
+## Analysis - Mixed effects regression
+```{r results = "hide"}
+set.seed(2024)
+fits$wedge = 
+  stan_glmer(y ~ treatment + x1 + x2 + time + (1|subject_id),
+             data = sim_data$wedge)
+```
+
+```{r}
+tibble(Covariate = 
+         names(fixef(fits$wedge)),
+       Estimate = fixef(fits$wedge)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$wedge,
+                                         prob = 0.95,
+                                         pars = names(fixef(fits$wedge)) ))) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+```
+
+
+
+# Cluster randomized
+
+## Simulate data
+```{r}
+sim_data$CRT = 
+  tibble(cluster_id = 
+           rep(1:20, each = 10),
+         x1 = rnorm(200),
+         x2 = rnorm(200),
+         re_compound_symmetry = rep(rnorm(20),each = 10),
+         treatment = rep(sample(rep(0:1,10)),each = 10)) %>% 
+  mutate(y = treatment + 0.5 * x1 + re_compound_symmetry + rnorm(n()))
+
+# Check to make sure data was produced correctly:
+sim_data$CRT %$% 
+  table(cluster_id,treatment)
+```
+
+## Analysis - Mixed effects regression
+```{r results = "hide"}
+set.seed(2024)
+fits$CRT = 
+  stan_glmer(y ~ x1 + x2 + treatment + (1|cluster_id),
+             data = sim_data$CRT)
+```
+
+```{r}
+tibble(Covariate = 
+         names(fixef(fits$CRT)),
+       Estimate = fixef(fits$CRT)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$CRT,
+                                         prob = 0.95,
+                                         pars = names(fixef(fits$CRT)) ))) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+```
+
+
+# RCT
+
+## Simulate data
+```{r}
+sim_data$RCT = 
+  tibble(treatment = rep(0:1,each = 50)) %>% 
+  mutate(y = treatment + rnorm(100))
+```
+
+## Analysis - ANOVA
+You can also adjust for covariates, but not necessary.
+```{r results = "hide"}
+set.seed(2024)
+fits$RCT = 
+  stan_glm(y ~ treatment,
+           data = sim_data$RCT)
+```
+
+```{r}
+tibble(Covariate = 
+         names(coef(fits$RCT)),
+       Estimate = coef(fits$RCT)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$RCT,
+                                         prob = 0.95,
+                                         par = names(coef(fits$RCT))))) %>% 
+  flextable() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs()
+```
+
+
+# One last tip
+It may be useful to you to create your code through string manipulation and then evaluate it.  I can redo the previous code for the CRT as follows:
+```{r results = "hide"}
+response_variable = "y"
+treatment_variable = "treatment"
+covariates = c("x1","x2")
+cluster_variable = "cluster_id"
+data_name = "sim_data$CRT"
+set.seed(2024)
+fits$CRT = 
+  eval(parse(text = 
+               paste0(
+                "stan_glmer(",
+                response_variable,
+                "~",
+                 paste(c(treatment_variable,
+                         covariates),
+                       collapse = " + "),
+                " + (1|",
+                cluster_variable,
+                "), data = ",
+                data_name,
+                ")"
+               )))
+
+```
+
+```{r}
+tibble(Covariate = 
+         names(fixef(fits$CRT)),
+       Estimate = fixef(fits$CRT)) %>% 
+  bind_cols(as_tibble(posterior_interval(fits$CRT,
+                                         prob = 0.95,
+                                         pars = names(fixef(fits$CRT)) ))) %>% 
+  flextable() %>% 
+  autofit() %>% 
+  colformat_double(digits = 3) %>% 
+  theme_booktabs() 
+```
+
+
+
+
