@@ -126,7 +126,7 @@ uiCatScrollPlot <- function(id, label = "catscrollplot"){
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tags$h3(shiny::tags$b("Categorical Variables")),
-    plotly::plotlyOutput(ns("plot")),
+    plotly::plotlyOutput(ns("plot"), width = 500, height = 500),
     shiny::actionButton(ns("buttonbackwards"), label = "Backwards"),
     shiny::actionButton(ns("buttonforwards"), label = "Forwards"),
     shiny::textOutput(ns("scrollindexinfo"))

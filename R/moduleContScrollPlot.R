@@ -122,7 +122,7 @@ uiContScrollPlot <- function(id, label = "contscrollplot"){
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tags$h3(shiny::tags$b("Continuous Variables")),
-    plotly::plotlyOutput(ns("plot"), height = "1000px"),
+    plotly::plotlyOutput(ns("plot"), height = 500, width = 500),
     shiny::actionButton(ns("buttonbackwards"), label = "Backwards"),
     shiny::actionButton(ns("buttonforwards"), label = "Forwards"),
     shiny::textOutput(ns("scrollindexinfo"))
