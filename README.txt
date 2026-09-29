@@ -120,7 +120,10 @@ particular R session, run devtools::install() which installs
 the package into the R library. then do library("mypackage")
 to access everything.
 
+If permission is denied even after keygen, try running the agent:
 
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/path/to/key
 
 
 
