@@ -57,15 +57,13 @@ binary_flowchart <- function(vals, final_node){
 #'
 #' Highlights flowchart path and inputs test values
 #'
-#' @param placeholder ph
+#' @param dana_fit List returned by fit_cross_sectional_continuous
 #'
-#' @returns placeholder
+#' @returns DiagrammeR graph
 #' @details Placeholder
-#'
 #'
 #' @export
 #'
-
 
 modify_continuous_flowchart <- function(dana_fit){
 
@@ -104,12 +102,13 @@ modify_continuous_flowchart <- function(dana_fit){
 
   # Modify edge df -------------------------------------------------------------
 
+  dana_fit$term_node <- 5
 
   modified_flowchart <- create_graph(nodes_df = modified_node_df,
                                      edges_df = base_edge_df)
 
-
-
+                                     
+                                     
   # Modify depending on final node ---------------------------------------------
   if (dana_fit$term_node == 1){
     modified_flowchart <- modified_flowchart |>
@@ -120,9 +119,20 @@ modify_continuous_flowchart <- function(dana_fit){
     set_edge_attrs_ws(edge_attr = color, value = "black") |>
     invert_selection() |>
     set_edge_attrs_ws(edge_attr = color, value = "grey")
-
   }
 
+  if (dana_fit$term_node == 2){
+    modified_flowchart <- modified_flowchart |>
+    select_nodes_by_id(nodes = c(6, 13, 7, 8, 2)) |>
+    invert_selection() |>
+      set_node_attrs_ws(node_attr = fillcolor, value = "grey") |>
+        select_edges_by_node_id(nodes = c(6, 13, 7, 2)) |>
+          set_edge_attrs_ws(edge_attr = color, value = "black") |>
+            invert_selection() |>
+              set_edge_attrs_ws(edge_attr = color, value = "grey")
+            
+          }
+          
   if (dana_fit$term_node == 3){
     modified_flowchart <- modified_flowchart |>
       select_nodes_by_id(nodes = c(6, 13, 14, 7, 8, 3, 9)) |>
@@ -135,6 +145,29 @@ modify_continuous_flowchart <- function(dana_fit){
 
   }
 
+  if (dana_fit$term_node == 4){
+    modified_flowchart <- modified_flowchart |>
+    select_nodes_by_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 10, 12, 4)) |>
+    invert_selection() |>
+      set_node_attrs_ws(node_attr = fillcolor, value = "grey") |>
+        select_edges_by_node_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 10, 4)) |>
+          set_edge_attrs_ws(edge_attr = color, value = "black") |>
+            invert_selection() |>
+              set_edge_attrs_ws(edge_attr = color, value = "grey")
+            
+          }
+  if (dana_fit$term_node == 5){
+    modified_flowchart <- modified_flowchart |>
+    select_nodes_by_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 10, 12, 5)) |>
+    invert_selection() |>
+      set_node_attrs_ws(node_attr = fillcolor, value = "grey") |>
+        select_edges_by_node_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 10, 5)) |>
+          set_edge_attrs_ws(edge_attr = color, value = "black") |>
+            invert_selection() |>
+              set_edge_attrs_ws(edge_attr = color, value = "grey")
+            
+          }
+
 
   return(modified_flowchart)
 
@@ -144,12 +177,13 @@ modify_continuous_flowchart <- function(dana_fit){
 
 
 
-# 
+
 # pima <- MASS::Pima.te
 # pima$npreg <- factor(pima$npreg)
 # pima_fit1 <- fit_cross_sectional_continuous(pima, response_var = "skin", pred_cat_vars = c("type", "npreg"),
 #                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes", "3"))
-# 
+#                                     # 
+# modify_continuous_flowchart(pima_fit1) |> render_graph()
 # 
 # pima_fit2 <- fit_cross_sectional_continuous(pima, response_var = "skin",
 #                                     pred_cont_vars = c("glu"))
@@ -163,7 +197,6 @@ modify_continuous_flowchart <- function(dana_fit){
 # custom_fit1 <- fit_cross_sectional_continuous(mydat,
 #                                               pred_cont_vars = c("a","b"), response_var = "y")
 # 
-# modify_continuous_flowchart(pima_fit1) |> render_graph()
 # modify_continuous_flowchart(pima_fit2) |> render_graph()
 # 
 # modify_continuous_flowchart(custom_fit1) |> render_graph()

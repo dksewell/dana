@@ -273,7 +273,7 @@ cross_sectional <- function(
       }), variable
     )
 
-    rslt$fit_table <- tibble(
+    rslt$fit_table <- dplyr::tibble(
       formula = deparse(fit$formula),
       prior = prior,
       family = family,
@@ -295,7 +295,7 @@ cross_sectional <- function(
 
   } else if (family == "poisson") {
 
-    rslt$fit_table <- tibble(
+    rslt$fit_table <- dplyr::tibble(
       formula = deparse(fit$formula),
       prior = prior,
       family = family,
@@ -355,7 +355,7 @@ cross_sectional <- function(
 
   } else if (family == "binomial") {
 
-    rslt$fit_table <- tibble(
+    rslt$fit_table <- dplyr::tibble(
       formula = deparse(fit$formula),
       prior = prior,
       family = family,

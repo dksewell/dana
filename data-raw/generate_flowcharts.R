@@ -84,13 +84,13 @@ continuous_base_flowchart <- create_graph() |>
   # Apply formatting to test nodes
   select_nodes(conditions = type == "test") |>
   set_node_attrs_ws(node_attr = "fillcolor", value = "lightyellow") |> #Set all text to black
-  set_node_attrs_ws(node_attr = "shape", value = "circle") |>
+  set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
   clear_selection() |>
 
   # Apply formatting to final_model nodes
   select_nodes(conditions = type == "final_model") |>
   set_node_attrs_ws(node_attr = "fillcolor", value = "orange") |> #Set all text to black
-  set_node_attrs_ws(node_attr = "shape", value = "circle") |>
+  set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
   clear_selection()
 
 continuous_base_flowchart |> render_graph()

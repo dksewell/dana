@@ -9,6 +9,7 @@
 #' @param pred_cat_vars_ref_levels description
 #' @param ci_level description
 #' @details
+#' 
 #' Returns a list subject to model cascade. Information includes
 #' final model fit, any intermediary test statistics.
 #'
@@ -28,6 +29,7 @@ fit_cross_sectional_continuous <- function(
     pred_cont_vars = NULL,
     pred_cat_vars_ref_levels = NULL,
     ci_level = NULL) {
+      
 
   # Preprocessing --------------------------------------------------------------
 
@@ -74,12 +76,14 @@ fit_cross_sectional_continuous <- function(
   print(rslt$bpval_parametric_untransformed)
 
   ## Positive outcome
-  rslt$positive_response <- ifelse(all(data$response_var > 0), yes = TRUE, no = FALSE)
+  rslt$positive_response <- ifelse(all(data[[response_var]] > 0), yes = TRUE, no = FALSE)
 
   ## Terminal Node 1
   if (rslt$bpval_parametric_untransformed > 0.05 && rslt$bpval_parametric_untransformed < 0.95) {
     rslt$fit <- rslt$parametric_untransformed
     rslt$term_node <- 1
+    rslt$fit_class <- class(rslt$fit)
+    rslt$fit_family <- rslt$fit$family$family
     return(rslt)
   }
 
@@ -93,26 +97,29 @@ fit_cross_sectional_continuous <- function(
     rslt$fit <- rslt$nonparametric_untransformed
     rslt$term_node <- 2
     rslt$log_transformed <- TRUE
+    rslt$fit_class <- class(rslt$fit)
+    rslt$fit_family <- rslt$fit$family$family
     return(rslt)
   }
 
 
   ## Parametric Log transformed model
-  parametric_log_transformed <- bayesics::glm_b(
+  rslt$parametric_log_transformed <- bayesics::glm_b(
     family = "gaussian",
     formula = log_transformed_formula,
     data = data,
     prior = prior,
     )
 
-  rslt$bpval_parametric_log_transformed <- bayesics::bayes_pvalue(parametric_log_transformed)$bpval
-
-  print(rslt$bpval_parametric_log_transformed)
+  rslt$bpval_parametric_log_transformed <- bayesics::bayes_pvalue(rslt$parametric_log_transformed)$bpval
 
   ## Terminal Node 3
   if (rslt$bpval_parametric_log_transformed > 0.05 && rslt$bpval_parametric_log_transformed < 0.95) {
-    rslt$fit <- rslt$parametric_untransformed
+    rslt$fit <- rslt$parametric_log_transformed
+    rslt$log_transformed <- TRUE
     rslt$term_node <- 3
+    rslt$fit_class <- class(rslt$fit)
+    rslt$fit_family <- rslt$fit$family$family
     return(rslt)
   }
 
@@ -125,7 +132,7 @@ fit_cross_sectional_continuous <- function(
 
   rslt$gof_nonparametric_log_transformed <- 1
   rslt$gof_nonparametric_untransformed <- 2
-  print("replacement needed!")
+  print("replacement needed! XXX")
 
   rslt$gof_comparison <- rslt$gof_nonparametric_log_transformed < rslt$gof_nonparametric_untransformed
 
@@ -134,6 +141,8 @@ fit_cross_sectional_continuous <- function(
     rslt$fit <- rslt$nonparametric_log_transformed
     rslt$term_node <- 4
     rslt$log_transformed <- TRUE
+    rslt$fit_class <- class(rslt$fit)
+    rslt$fit_family <- rslt$fit$family$family
     return(rslt)
   }
 
@@ -141,29 +150,16 @@ fit_cross_sectional_continuous <- function(
   if (rslt$gof_nonparametric_log_transformed >= rslt$gof_nonparametric_untransformed){
     rslt$fit <- rslt$nonparametric_untransformed
     rslt$term_node <- 5
+    rslt$fit_class <- class(rslt$fit)
+    rslt$fit_family <- rslt$fit$family$family
     return(rslt)
   }
 
 }
 
 
-interpret_cross_sectional_continuous <- function(dana_fit){
 
-  rslt <- list()
-
-  # Human readable version of fit information
-  rslt$table_hr  <- dana_fit$fit$summary
-  colnames(rslt$table_hr) <- c("Variable", "Mean", "Lower CI Bound",
-                               "Upper CI Bound", "PDir", "ROPE", "ROPE Bounds")
-
-  rslt$table_hr <- rslt$table_hr |>
-    DT::datatable() |>
-    DT::formatSignif(columns = 2:6, digits = 3)
-
-  # Extract values
-  variables <- dana_fit$fit$summary$Variable[-1]
-
-  return(rslt)
-
-}
-
+# pima <- MASS::Pima.te
+# pima$npreg <- factor(pima$npreg)
+# pima_fit1 <- fit_cross_sectional_continuous(pima, response_var = "skin", pred_cat_vars = c("type", "npreg"),
+#                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes", "3"))

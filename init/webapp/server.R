@@ -1,38 +1,3 @@
-library(shiny)
-library(DT)
-library(ggplot2)
-library(dplyr)
-library(httr)
-library(tidyverse)
-library(magrittr)
-library(gemini.R)
-library(readr)
-library(readxl)
-library(mvtnorm)
-library(Matrix)
-library(flextable)
-library(rstanarm)
-library(bayesplot)
-library(MatrixModels)
-library(plotly)
-library(factoextra)
-library(bridgesampling)
-library(lme4)
-library(officer)
-library(shinyBS)
-library(here)
-library(gtsummary)
-library(docstring)
-library(bayesics)
-library(dana)
-library(gt)
-library(bslib)
-library(table1)
-library(bayestestR)
-library(DiagrammeR)
-library(shinycssloaders)
-library(bsicons)
-
 server <- function(input, output, session) {
 
   # Reactive Values ------------------------------------------------------------
@@ -173,7 +138,6 @@ server <- function(input, output, session) {
     )
     }
   })
-
 
 
 
@@ -326,12 +290,11 @@ server <- function(input, output, session) {
 
   ns_interpret <- shiny::NS("analysis_interpret")
 
+  # Run based on selected analysis ----------------------------------
   observeEvent(input$run_analysis, {
 
     req(user_data())
     all_vars <- names(user_data())
-
-
 
     output$go_on <- renderUI(NULL)
     output$analysis_interpret <- renderUI(NULL)
@@ -346,6 +309,32 @@ server <- function(input, output, session) {
     switch(input$study_design,
       "Cross-sectional (Regression)" = {
         if (input$response_type == "Continuous"){
+
+          analysis2 <- fit_cross_sectional(
+            response_type = input$response_type,
+            data = user_data()[, all_vars],
+            prior = "improper",
+            response_var = input$response_var_csr,
+            pred_cat_vars = setdiff(input$categorical_vars, input$response_var_csr),
+            pred_cont_vars = setdiff(input$continuous_vars, input$response_var_csr),
+            pred_cat_vars_ref_levels = ref_levels(),
+            ci_level = ci_level()
+          )
+          print(analysis2)
+          print("here1")
+          print("here")
+          print("here3")
+          output$flowchart <- renderGrViz({
+           grViz(analysis2$flowchart)
+          })
+
+
+
+
+
+
+
+
         analysis <- cross_sectional(data = user_data()[,all_vars],
                                     prior = "improper",
                                     family = "gaussian",
@@ -354,7 +343,7 @@ server <- function(input, output, session) {
                                     pred_cont = setdiff(input$continuous_vars, input$response_var_csr),
                                     ref_levels = ref_levels(),
                                     ci_level = ci_level())
-        }
+          }
 
         if (input$response_type == "Count"){
           analysis <- cross_sectional(data = user_data()[,all_vars],

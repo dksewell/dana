@@ -1,182 +1,210 @@
 
-library(shiny)
-library(bslib)
-library(DT)
-library(shinycssloaders)
-library(shinyBS)
-library(bsicons)
-
-ns_interpret <- shiny::NS("analysis_interpret")
+ns_interpret <- shiny::NS("ns_interpret")
 
 ui <- navbarPage(
   title = "DANA",
-
-
-  # About Page app
-  tabPanel("About the app",
-           # Introduction page
-           div(class = "content",
-               HTML("<h2>Welcome to <b>DANA</b>: <b>D</b>esign and <b>An</b>alysis <b>A</b>ssistant</h2>"),
-
-
-               p("This app is designed to guide you through the process of selecting an appropriate quantitative study design based on research objectives and study conditions, and then analyze your data accordingly.  DANA has two parts."),
-               p(),
-               p(),
-               HTML("<h4><u>QUANTITATIVE STUDY DESIGN DECISION TREE</u></h4>"),
-               p("By answering a series of questions, you will be directed to the most suitable study design and provided with relevant resources and examples."),
-               tags$ol(
-                 tags$li("Read the question displayed on the left side of the screen and choose the most appropriate answer."),
-                 tags$li("Click the 'Next' button to proceed to the next question."),
-                 tags$li("The app will dynamically update and guide you through a decision tree."),
-                 tags$li("At the end of the decision tree, you will be provided with your study type, example data formats, and additional considerations for your study design."),
-                 tags$li("If you want to start over, click the 'Start Over' button.")
-               ),
-               p("We hope this app assists you in planning and designing robust public health studies."),
-               p(),
-               p(),
-               HTML("<h4><u>DATA ANALYSIS</u></h4>"),
-               p("This app also provides tools to analyze your data."),
-               tags$ol(
-                 tags$li("Upload your data"),
-                 tags$li("Choose your study design"),
-                 tags$li("Follow the subsequent directions (which will vary based on your data and study design).")
-               ))
-
-
-  ),
-  # Study Design Decision Tree Tab
-  tabPanel("Decision Tree",
-           fluidPage(
-             # Add custom CSS for background
-             tags$style(HTML("
-               body {
-                 background-image: url('https://prc.public-health.uiowa.edu/sites/prc.public-health.uiowa.edu/files/styles/ultrawide__1312_x_562/public/2022-05/PXL_20210909_001344683_2.jpg?h=6abcd482&itok=U2a29jwj'); /* Replace with the actual URL of the PRC UIowa logo */
-                 background-size: cover; /* Ensure the image covers the entire background */
-                 background-attachment: fixed; /* Fix the background image */
-                 font-family: 'Arial', sans-serif;
-                 color: #000000; /* UIowa black */
-               }
-               .navbar-default {
-                 background-color: #FFD700; /* UIowa gold */
-                 border-color: #FFD700;
-               }
-               .navbar-default .navbar-brand {
-                 color: #000000; /* Black text for branding */
-               }
-               .navbar-default .navbar-nav > li > a {
-                 color: #000000; /* Black text for navbar items */
-               }
-               .content {
-                 background-color: rgba(255, 255, 255, 0.9); /* White background with slight transparency */
-                 padding: 20px;
-                 border-radius: 10px;
-                 box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-                 color: #000000; /* Black text */
-               }
-               .btn {
-                 background-color: #FFD700; /* UIowa gold */
-                 color: #000000; /* Black text */
-                 border-radius: 5px;
-                 border: none;
-               }
-               .btn:hover {
-                 background-color: #FFC107; /* Lighter gold */
-                 color: #000000; /* Black text */
-               }
-               .panel {
-                 background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
-                 border-radius: 10px;
-                 padding: 15px;
-                 box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-               }
-             ")),
-
-             titlePanel("Quantitative Study Design Decision Tree"),
-
-             sidebarLayout(
-               sidebarPanel(
-                 uiOutput("question_ui"),
-                 actionButton("reset", "Start Over")
-               ),
-               mainPanel(
-                 div(class = "content",
-                     uiOutput("summary"),
-                     uiOutput("study_type"),
-                     uiOutput("data_example"),
-                     uiOutput("resources"),
-                     uiOutput("additional_considerations"),
-                     # Add the regression output here
-                     #h3("Regression Analysis Results"),  # Optional: Section Title
-                     uiOutput("regression_output")
-                 )
-               )
-             )
-           )
-  ),
-
-
-  # Data Analysis Tab
+  tabPanel(
+    title = "About the app",
+    div(
+      class = "content",
+      HTML("<h2>Welcome to <b>DANA</b>: <b>D</b>esign and <b>An</b>alysis <b>A</b>ssistant</h2>"),
+      p("This app is designed to guide you through the process of selecting an appropriate quantitative study design based on research objectives and study conditions, and then analyze your data accordingly.  DANA has two parts."),
+      p(),
+      p(),
+      HTML("<h4><u>QUANTITATIVE STUDY DESIGN DECISION TREE</u></h4>"),
+      p("By answering a series of questions, you will be directed to the most suitable study design and provided with relevant resources and examples."),
+      tags$ol(
+        tags$li("Read the question displayed on the left side of the screen and choose the most appropriate answer."),
+        tags$li("Click the 'Next' button to proceed to the next question."),
+        tags$li("The app will dynamically update and guide you through a decision tree."),
+        tags$li("At the end of the decision tree, you will be provided with your study type, example data formats, and additional considerations for your study design."),
+        tags$li("If you want to start over, click the 'Start Over' button.")
+        ),
+      p("We hope this app assists you in planning and designing robust public health studies."),
+      p(),
+      p(),
+      HTML("<h4><u>DATA ANALYSIS</u></h4>"),
+      p("This app also provides tools to analyze your data."),
+      tags$ol(
+        tags$li("Upload your data"),
+        tags$li("Choose your study design"),
+        tags$li("Follow the subsequent directions (which will vary based on your data and study design).")
+        )
+      )
+    ),
+  tabPanel(
+    title = "Decision Tree",
+    fluidPage(
+      tags$style(
+        HTML(
+          "
+          body
+          {
+          background-image: url('https://prc.public-health.uiowa.edu/sites/prc.public-health.uiowa.edu/files/styles/ultrawide__1312_x_562/public/2022-05/PXL_20210909_001344683_2.jpg?h=6abcd482&itok=U2a29jwj'); /* Replace with the actual URL of the PRC UIowa logo */
+          background-size: cover; /* Ensure the image covers the entire background */
+          background-attachment: fixed; /* Fix the background image */
+          font-family: 'Arial', sans-serif;
+          color: #000000; /* UIowa black */
+          }
+          .navbar-default
+          {
+          background-color: #FFD700; /* UIowa gold */
+          border-color: #FFD700;
+          }
+          .navbar-default .navbar-brand
+          {
+          color: #000000; /* Black text for branding */
+          }
+          .navbar-default .navbar-nav > li > a {
+          color: #000000; /* Black text for navbar items */
+          }
+          .content
+          {
+          background-color: rgba(255, 255, 255, 0.9); /* White background with slight transparency */
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+          color: #000000; /* Black text */
+          }
+          .btn
+          {
+          background-color: #FFD700; /* UIowa gold */
+          color: #000000; /* Black text */
+          border-radius: 5px;
+          border: none;
+          }
+          .btn:hover
+          {
+          background-color: #FFC107; /* Lighter gold */
+          color: #000000; /* Black text */
+          }
+          .panel
+          {
+          background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
+          border-radius: 10px;
+          padding: 15px;
+          box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          "
+          )
+        ),
+      titlePanel("Quantitative Study Design Decision Tree"),
+      sidebarLayout(
+        sidebarPanel(
+          uiOutput("question_ui"),
+          actionButton("reset", "Start Over")
+          ),
+        mainPanel(
+          div(class = "content",
+              uiOutput("summary"),
+              uiOutput("study_type"),
+              uiOutput("data_example"),
+              uiOutput("resources"),
+              uiOutput("additional_considerations"),
+              uiOutput("regression_output")
+              )
+          )
+        )
+      )
+    ),
   tabPanel("Data Analysis",
     page_fluid(
       fluidRow(
-        column(width = 12,
-      theme = bs_theme(version = 5),
-      titlePanel("Data Analysis"),
-                 class = "panel",
-                 tabsetPanel(
-                   tabPanel("Upload Data",
-                            HTML("<h3> <b> Upload Data </b> </h3>"),
-                            fileInput("file",
-                                      label = tags$p(tags$b("Choose File:"),
-                                                     tags$br("Accepts .csv .xlsx .rds")),
-                                      accept = c(".csv", ".xlsx", ".rds")),
-                            checkboxInput("select_rows", "Select custom data?"),
-                            conditionalPanel(
-                              condition = "input.select_rows",
-                              numericInput("start_row", "Start Row (Row with Variable Names)", value = NULL),
-                              numericInput("end_row", "End Row (row with Final Observation)", value = NULL)
+        column(
+          width = 12,
+          theme = bs_theme(version = 5),
+          titlePanel("Data Analysis"),
+          class = "panel",
+          tabsetPanel(
+            tabPanel(
+              title = "Upload Data",
+              tags$h3(tags$b("Upload Data")),
+              fileInput(
+                inputId = "file",
+                label = tags$p(
+                  tags$b("Choose File:"),
+                  tags$br("Accepts .csv .xlsx .rds")),
+                accept = c(".csv", ".xlsx", ".rds")),
+              checkboxInput("select_rows", "Select custom data?"),
+              conditionalPanel(
+                condition = "input.select_rows",
+                numericInput("start_row", "Start Row (Row with Variable Names)", value = NULL),
+                numericInput("end_row", "End Row (row with Final Observation)", value = NULL)
+                ),
+              actionButton("upload_data", "Upload Data"),
+              conditionalPanel(
+                condition = "input.upload_data > 0",
+                dana::uiUploadInfo(id = "uploadinfo"),
+                fluidRow(
+                  column(
+                    width = 3,
+                    tags$h3(
+                      tags$b("Variable Specification")
+                      ),
+                    selectInput(
+                      inputId = "categorical_vars",
+                      label = tagList(
+                        "Select Categorical Variables: ",
+                        tooltip(
+                          bs_icon(
+                            name = "info-circle-fill",
+                            style = "color: #007bc0; cursor: pointer;"
                             ),
-                            actionButton("upload_data", "Upload Data"),
-                            conditionalPanel(
-                              condition = "input.upload_data > 0",
-                              uiUploadInfo(id = "uploadinfo"),
-                            fluidRow(
-                              column(width = 3,
-                                     tags$h3(tags$b("Variable Specification")),
-
-                                    selectInput("categorical_vars", label = tagList("Select Categorical Variables: ",
-                                                                                    tooltip(
-                                                                                      bs_icon("info-circle-fill", style = "color: #007bc0; cursor: pointer;"),
-                                                                                      "These are variables that do not have inherent ordering. Examples can
-                                                                                      include sex (M,F) or treatment status (treatment, placebo).",
-                                                                                      placement = "right"
-                                                                                    )
-                                    ), selected = NULL, choices = NULL, multiple = TRUE),
-                                    selectInput("continuous_vars", label = tagList("Select Continuous Variables: ",
-                                                                                   tooltip(
-                                                                                     bs_icon("info-circle-fill", style = "color: #007bc0; cursor: pointer;"),
-                                                                                     "These are variables that are inherently ordered. Examples can include age or
-                                                                                     weight.",
-                                                                                     placement = "right"
-                                                                                   )
-                                    ), selected = NULL, choices = NULL, multiple = TRUE),
-                                    conditionalPanel(
-                                      condition = "input.upload_data > 0",
-                                      uiOutput("ref_level_selection_ui")
-                                    ),
-                                    selectInput("ci_level", "Select Credible Interval Level: ",
-                                                selected = 0.95,
-                                                choices = c("99%" = 0.99, "95%" = 0.95, "90%" = 0.90, "Custom" = "custom"),
-                                                multiple = FALSE),
-                                    conditionalPanel(
-                                      condition = "input.ci_level == 'custom'",
-                                      numericInput("ci_custom", "Custom interval level: ",
-                                                   value = 0.95,
-                                                   min = 0.50,
-                                                   max = 0.99,
-                                                   step = 0.01)
-                                    ),
-                                    uiOutput("ci_warning"),
+                          "
+                          These are variables that do not have
+                          inherent ordering. Examples can
+                          include sex (M,F) or
+                          treatment status (treatment, placebo).",
+                          placement = "right"
+                          )
+                        ),
+                      selected = NULL,
+                      choices = NULL,
+                      multiple = TRUE
+                    ),
+                    selectInput(
+                      inputId ="continuous_vars",
+                      label = tagList(
+                        "Select Continuous Variables: ",
+                        tooltip(
+                          bs_icon(
+                            name = "info-circle-fill",
+                            style = "color: #007bc0; cursor: pointer;"
+                            ),
+                          "
+                          These are variables that are inherently ordered.
+                          Examples can include age or weight.
+                          ",
+                          placement = "right"
+                          )
+                        ),
+                      selected = NULL,
+                      choices = NULL,
+                      multiple = TRUE
+                      ),
+                    conditionalPanel(
+                      condition = "input.upload_data > 0",
+                      uiOutput("ref_level_selection_ui")
+                      ),
+                    selectInput(
+                      inputId = "ci_level", 
+                      label = "Select Credible Interval Level: ",
+                      selected = 0.95,
+                      choices = c("99%" = 0.99, "95%" = 0.95, "90%" = 0.90, "Custom" = "custom"),
+                      multiple = FALSE
+                    ),
+                    conditionalPanel(
+                      condition = "input.ci_level == 'custom'",
+                      numericInput(
+                        inputId = "ci_custom", 
+                        label = "Custom interval level: ",
+                        value = 0.95,
+                        min = 0.50,
+                        max = 0.99,
+                        step = 0.01
+                    )
+                  ),
+                  uiOutput("ci_warning"),
                                     actionButton("continue", "Continue")),
                               column(width = 8,
                                      tags$h3(tags$b("Data Preview")),
@@ -194,17 +222,24 @@ ui <- navbarPage(
                                                                            placement = "right"
                                                                          )
                             ), selected = NULL, choices = NULL, multiple = FALSE),
+                            fluidRow(
+                              column(
                             conditionalPanel(
                               condition = "input.continuous_vars.length > 0",
                               uiContScrollPlot(id = "contscrollplot")),
+                              width = 6
+                              ),
+                              column(
                             conditionalPanel(
                               condition = "input.categorical_vars.length > 0",
                               uiCatScrollPlot(id = "catscrollplot")),
+                              width = 6
+                              ),
                             conditionalPanel(
                               condition = "input.categorical_vars.length > 0 || input.continuous_vars.length > 0",
                               shiny::includeCSS(system.file(package="table1", "table1_defaults_1.0/table1_defaults.css")),
-                              uiFiveNum(id = "fivenum")),
-                            ),
+                              uiFiveNum(id = "fivenum"))
+                            )),
 
                    tabPanel("Analysis Output",
                             fluidRow(
@@ -324,7 +359,6 @@ ui <- navbarPage(
                               uiOutput("go_on"),
                                 tags$h3(tags$b("Fit Info")),
                                 conditionalPanel(
-                                  condition = "input$scrollplot > 0",
                                   uiScrollPlot(id = "scrollplot")
                                 ),
                               hr(),
@@ -359,6 +393,7 @@ ui <- navbarPage(
   tabPanel("Examples",
            fluidPage(
              div(class = "content",
+             grVizOutput("flowchart"),
                  HTML("<h4> Below is an example data analysis in which we demonstrate how to use
                     DANA. </h4>"),
                  HTML("The goal of this example analysis is to understand
