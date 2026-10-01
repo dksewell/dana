@@ -102,8 +102,6 @@ modify_continuous_flowchart <- function(dana_fit){
 
   # Modify edge df -------------------------------------------------------------
 
-  dana_fit$term_node <- 5
-
   modified_flowchart <- create_graph(nodes_df = modified_node_df,
                                      edges_df = base_edge_df)
 

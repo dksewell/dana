@@ -18,7 +18,7 @@ interpret.lm_b <- function(
 ){
 
   # Ensure fit is of class lm_b
-  if (!dana_fit$fit_class == "lm_b"){
+  if (!("lm_b" %in% dana_fit$fit_class)){
     stop("Object must be of class 'lm_b'")
   }
 
@@ -77,7 +77,7 @@ interpret.lm_b <- function(
                       outcome,
                       " for observations with ",
                       var, " = ", level, " is ",
-                      round(abs(df$`Post Mean`), digits = 3),
+                      round(abs(df$`Post Mean`), digits = 3), " ",
                       df$Change, " (CI: ", round(df$Lower, digits = 3), ", ",
                       round(df$Upper, digits = 3), ") than for observations with ",
                       var, " = ", ref_level, ".")
@@ -101,7 +101,7 @@ interpret.lm_b <- function(
       estimate = paste0("We estimate that a one unit increase in ",
                         var,
                         " is associated with a ",
-                        round(abs(df$`Post Mean`), digits = 3), " times ",
+                        round(abs(df$`Post Mean`), digits = 3), " ",
                         df$Change, " (CI: ", round(df$Lower, digits = 3), ", ",
                       round(df$Upper, digits = 3), ") mean ",
                         outcome, " value.")
@@ -170,7 +170,7 @@ interpret.lm_b <- function(
 
       # Count
       # Binary
-    
+
 
     rslt = list("estimate" = estimate,
                 "pdir" = pdir,
@@ -178,8 +178,6 @@ interpret.lm_b <- function(
 
   }) |>
     setNames(names(summary_var_df))
-
-  rslt$summary <- fit$summary
 
   return(rslt)
 

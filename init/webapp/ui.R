@@ -187,7 +187,7 @@ ui <- navbarPage(
                       uiOutput("ref_level_selection_ui")
                       ),
                     selectInput(
-                      inputId = "ci_level", 
+                      inputId = "ci_level",
                       label = "Select Credible Interval Level: ",
                       selected = 0.95,
                       choices = c("99%" = 0.99, "95%" = 0.95, "90%" = 0.90, "Custom" = "custom"),
@@ -196,7 +196,7 @@ ui <- navbarPage(
                     conditionalPanel(
                       condition = "input.ci_level == 'custom'",
                       numericInput(
-                        inputId = "ci_custom", 
+                        inputId = "ci_custom",
                         label = "Custom interval level: ",
                         value = 0.95,
                         min = 0.50,
@@ -324,6 +324,7 @@ ui <- navbarPage(
                                      actionButton("run_analysis", "Run Analysis")),
                               column(width = 8,
                                      tagList(tags$h3(tags$b("Study Info"))),
+                                     grVizOutput("flowchart", height = 500, width = 500),
                                      uiStudyInfo("studyinfo")),
                             ),
                             conditionalPanel(
@@ -334,12 +335,13 @@ ui <- navbarPage(
 
                             tagList(tags$h3(tags$b("Interpretation"))),
 
+
                             conditionalPanel(
                               condition = "(input.study_design === 'Cross-sectional (Regression)' ||
                                             input.study_design === 'Retrospective Cohort (Regression)') &&
                                             input.run_analysis > 0",
                               selectInput(
-                              inputId = ns_interpret("vars_interpret"),
+                              inputId = "id_vars_interpret_selection",
                               label = "Select a variable to interpret",
                               choices = NULL,
                               selected = NULL,
@@ -350,13 +352,13 @@ ui <- navbarPage(
                             ),
 
 
-                            uiOutput("analysis_interpret"),
+
+                            uiOutput("id_vars_interpret"),
                             uiOutput("analysis_interpret_notes"),
 
                             checkboxInput("show_interpret_advanced", "Show advanced information", FALSE),
                             conditionalPanel(
                               condition = "input.show_interpret_advanced",
-                              uiOutput("go_on"),
                                 tags$h3(tags$b("Fit Info")),
                                 conditionalPanel(
                                   uiScrollPlot(id = "scrollplot")
@@ -393,7 +395,6 @@ ui <- navbarPage(
   tabPanel("Examples",
            fluidPage(
              div(class = "content",
-             grVizOutput("flowchart"),
                  HTML("<h4> Below is an example data analysis in which we demonstrate how to use
                     DANA. </h4>"),
                  HTML("The goal of this example analysis is to understand

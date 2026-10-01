@@ -283,12 +283,14 @@ server <- function(input, output, session) {
 
 
 
+  analysis <- reactiveVal()
 
   observeEvent(input$study_design, {
     serverStudyInfo(id = "studyinfo", type = input$study_design)
       })
 
   ns_interpret <- shiny::NS("analysis_interpret")
+
 
   # Run based on selected analysis ----------------------------------
   observeEvent(input$run_analysis, {
@@ -308,9 +310,9 @@ server <- function(input, output, session) {
 
     switch(input$study_design,
       "Cross-sectional (Regression)" = {
-        if (input$response_type == "Continuous"){
 
-          analysis2 <- fit_cross_sectional(
+          ## Dana fit
+          fit_cross_sectional(
             response_type = input$response_type,
             data = user_data()[, all_vars],
             prior = "improper",
@@ -319,77 +321,83 @@ server <- function(input, output, session) {
             pred_cont_vars = setdiff(input$continuous_vars, input$response_var_csr),
             pred_cat_vars_ref_levels = ref_levels(),
             ci_level = ci_level()
-          )
-          print(analysis2)
-          print("here1")
-          print("here")
-          print("here3")
+          ) |> analysis()
+
+          ## Flowchart
           output$flowchart <- renderGrViz({
-           grViz(analysis2$flowchart)
+           grViz(analysis()$flowchart)
           })
 
-
-
-
-
-
-
-
-        analysis <- cross_sectional(data = user_data()[,all_vars],
-                                    prior = "improper",
-                                    family = "gaussian",
-                                    outcome_var = input$response_var_csr,
-                                    pred_cat = setdiff(input$categorical_vars, input$response_var_csr),
-                                    pred_cont = setdiff(input$continuous_vars, input$response_var_csr),
-                                    ref_levels = ref_levels(),
-                                    ci_level = ci_level())
-          }
-
-        if (input$response_type == "Count"){
-          analysis <- cross_sectional(data = user_data()[,all_vars],
-                                      prior = "improper",
-                                      family = "poisson",
-                                      outcome_var = input$response_var_csr,
-                                      offset_var = input$offset_var,
-                                      pred_cat = setdiff(input$categorical_vars, c(input$offset_var,input$response_var_csr)),
-                                      pred_cont = setdiff(input$continuous_vars, c(input$offset_var,input$response_var_csr)),
-                                      ref_levels = ref_levels(),
-                                      ci_level = ci_level())
-        }
-
-        if (input$response_type == "Binary"){
-          analysis <- cross_sectional(data = user_data()[,all_vars],
-                                      prior = "improper",
-                                      family = "binomial",
-                                      outcome_var = input$response_var_csr,
-                                      pred_cat = setdiff(input$categorical_vars, input$response_var_csr),
-                                      pred_cont = setdiff(input$continuous_vars, input$response_var_csr),
-                                      ref_levels = ref_levels(),
-                                      ci_level = ci_level())
-
-          print(analysis$bpval)
-
-          if (analysis$bpval < 0.95 && analysis$bpval > 0.05){
-          serverFlowchart(id = "flowchart", vals = analysis$bpval, final_node = 4)}
-          serverFlowchart(id = "flowchart", vals = analysis$bpval, final_node = 3)
-
-
-        }
-        serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
-        print(length(analysis$plots))
-        output$analysis_info <- renderDT({analysis$table_hr})
-        output$fit_info <- renderDT({analysis$fit_table})
-
-        observe({
-          req(analysis$interpret)
-
+          ## Interpretations
           updateSelectInput(
-            session,
-            ns_interpret("vars_interpret"),
-            choices = names(analysis$interpret),
-            selected = character(0)
+              session,
+              inputId = "id_vars_interpret_selection",
+              choices = names(analysis()$interpretation),
+              selected = character(0)
+            )
+
+          output$id_vars_interpret <- renderUI({
+            tagList(
+              lapply(input[["id_vars_interpret_selection"]], function(x) {
+              var <- analysis()$interpretation[[x]]
+              tagList(
+                tags$h4(x),
+                tags$p(
+                  tags$strong("Effect size: "),
+                  var$estimate,
+                ),
+                tags$p(
+                  tags$strong("PDir: "),
+                  var$pdir
+                ),
+                tags$p(
+                  tags$strong("ROPE: "),
+                  var$rope
+                ),
+                tags$div(style = "margin-bottom: 25px;")
+              )
+            }
+            )
           )
-        })
+          }
+          )
+
+          ## Plots
+          serverScrollPlot(id = "scrollplot", ggplot_list = analysis()$plots)
+
+          ## Summary
+          output$analysis_info <- renderDT(analysis()$summary)
+
+          ## Fit info
+          output$fit_info <- renderDT({analysis()$fit_info})
+
+
+
+        # if (input$response_type == "Count"){
+        #   analysis <- cross_sectional(data = user_data()[,all_vars],
+        #                               prior = "improper",
+        #                               family = "poisson",
+        #                               outcome_var = input$response_var_csr,
+        #                               offset_var = input$offset_var,
+        #                               pred_cat = setdiff(input$categorical_vars, c(input$offset_var,input$response_var_csr)),
+        #                               pred_cont = setdiff(input$continuous_vars, c(input$offset_var,input$response_var_csr)),
+        #                               ref_levels = ref_levels(),
+        #                               ci_level = ci_level())
+        # }
+        #
+        # if (input$response_type == "Binary"){
+        #   analysis <- cross_sectional(data = user_data()[,all_vars],
+        #                               prior = "improper",
+        #                               family = "binomial",
+        #                               outcome_var = input$response_var_csr,
+        #                               pred_cat = setdiff(input$categorical_vars, input$response_var_csr),
+        #                               pred_cont = setdiff(input$continuous_vars, input$response_var_csr),
+        #                               ref_levels = ref_levels(),
+        #                               ci_level = ci_level())
+        #
+        #
+        # }
+
 
         observeEvent(input[[ns_interpret("select_all_vars_interpret")]], {
           updateSelectInput(
@@ -407,32 +415,6 @@ server <- function(input, output, session) {
           )
         })
 
-
-        output$analysis_interpret <- renderUI({
-          req(length(input[[ns_interpret("vars_interpret")]]) > 0)
-          tagList(
-            lapply(input[[ns_interpret("vars_interpret")]], function(x) {
-              var <- analysis$interpret[[x]]
-              tagList(
-                tags$h4(x),
-                tags$p(
-                  tags$strong("Effect size: "),
-                  var$estimate
-                ),
-                tags$p(
-                  tags$strong("PDir: "),
-                  var$pdir
-                ),
-                tags$p(
-                  tags$strong("ROPE: "),
-                  var$rope
-                ),
-                tags$div(style = "margin-bottom: 25px;")
-              )
-            })
-          )
-        })
-
         output$analysis_interpret_notes <- renderUI({
           tagList(
             tags$hr(),
@@ -441,18 +423,10 @@ server <- function(input, output, session) {
             tags$h4("Probability of Direction (PDir)"),
             tags$p(pdir_notes),
             tags$h4("Region of Practical Equivalence (ROPE)"),
-            tags$p(analysis$interpret_notes),
+            tags$p(analysis()$interpret_notes),
             tags$hr()
           )
         })
-
-        output$go_on <- renderUI({
-          tagList(
-          tags$h3(tags$b("Diagnostic Check")),
-            tags$p(analysis$diagnostic)
-          )
-        })
-
       },
       "Cross-sectional (No Regression)" = {
 
@@ -500,7 +474,7 @@ server <- function(input, output, session) {
 
           output$analysis_info <- renderDT({analysis$table_hr})
           output$fit_info <- renderDT({analysis$fit_table})
-          serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
+          #serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
 
           output$analysis_interpret <- renderUI({
             tagList(
