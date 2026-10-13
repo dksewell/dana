@@ -168,7 +168,108 @@ interpret.lm_b <- function(
                     df$ROPE, ".")
     }}
 
-      # Count
+    # Count
+    ## Count outcomes without offset
+    if (dana_fit$fit_family %in% c("poisson", "negbinom") && dana_fit$offset == FALSE){
+
+      ## Interpret categorical variables
+      if (var %in% cat_vars){
+        estimate = paste0("We estimate that the expected count of ",
+                          outcome,
+                          " for observations with ",
+                          var, " = ", level, " is ",
+                          round(abs(exp(df$`Post Mean`)), digits = 3), " times ",
+                          df$Change, " (CI: ", round(exp(df$Lower), digits = 3), ", ",
+                          round(exp(df$Upper), digits = 3), ") than for observations with ",
+                          var, " = ", ref_level, ".")
+
+        pdir = paste0("We are ",
+                      df$`Prob Dir` * 100,
+                      "% sure that observations with ",
+                      var, " = ",
+                      level, " have a ",
+                      df$Change, " mean ", outcome,
+                      " compared to observations with ",
+                      var, " = ", ref_level, ".")
+        rope = paste0("The probability that the effect of ", var, " = ", level,
+                      " on the mean ",
+                      outcome, " is outside the region of practical equivalence is estimated to be ",
+                      df$ROPE, ".")
+      }
+
+      ## Interpret continuous variables
+      if (var %in% cont_vars){
+        estimate = paste0("We estimate that a one unit increase in ",
+                          var,
+                          " is associated with a ",
+                          round(abs(exp(df$`Post Mean`)), digits = 3), " times ",
+                          df$Change, " (CI: ", round(exp(df$Lower), digits = 3), ", ",
+                          round(exp(df$Upper), digits = 3), ") count of ",
+                          outcome, ".")
+
+        pdir = paste0("We are ",
+                      df$`Prob Dir` * 100,
+                      "% sure that ",
+                      var, " has a ",
+                      df$Association, " association with ",
+                      outcome, "."
+        )
+        rope = paste0("The probability that the effect of ",
+                      var, " is outside the region of practical equivalence is estimated to be ",
+                      df$ROPE, ".")
+      }}
+
+    ## Count outcomes with offset
+    if (dana_fit$fit_family %in% c("poisson", "negbinom") && dana_fit$offset == TRUE){
+
+      ## Interpret categorical variables
+      if (var %in% cat_vars){
+        estimate = paste0("We estimate that the expected rate of of ",
+                          outcome, "per", dana_fit$offset_var,
+                          " for observations with ",
+                          var, " = ", level, " is ",
+                          round(abs(exp(df$`Post Mean`)), digits = 3), " times ",
+                          df$Change, " (CI: ", round(exp(df$Lower), digits = 3), ", ",
+                          round(exp(df$Upper), digits = 3), ") than for observations with ",
+                          var, " = ", ref_level, ".")
+
+        pdir = paste0("We are ",
+                      df$`Prob Dir` * 100,
+                      "% sure that observations with ",
+                      var, " = ",
+                      level, " have a ",
+                      df$Change, " mean ", outcome,
+                      " compared to observations with ",
+                      var, " = ", ref_level, ".")
+        rope = paste0("The probability that the effect of ", var, " = ", level,
+                      " on the mean ",
+                      outcome, " is outside the region of practical equivalence is estimated to be ",
+                      df$ROPE, ".")
+      }
+
+      ## Interpret continuous variables
+      if (var %in% cont_vars){
+        estimate = paste0("We estimate that a one unit increase in ",
+                          var,
+                          " is associated with a ",
+                          round(abs(exp(df$`Post Mean`)), digits = 3), " times ",
+                          df$Change, " (CI: ", round(exp(df$Lower), digits = 3), ", ",
+                          round(exp(df$Upper), digits = 3), ") rate of ",
+                          outcome, " per ", dana_fit$offset_var, ".")
+
+        pdir = paste0("We are ",
+                      df$`Prob Dir` * 100,
+                      "% sure that ",
+                      var, " has a ",
+                      df$Association, " association with ",
+                      outcome, "."
+        )
+        rope = paste0("The probability that the effect of ",
+                      var, " is outside the region of practical equivalence is estimated to be ",
+                      df$ROPE, ".")
+      }}
+
+
       # Binary
 
 

@@ -20,7 +20,7 @@ np_glm_b_gof <- function(fit, log_transformed = FALSE){
   }
 
   if (fit$family$family == "gaussian" & log_transformed == TRUE){
-      logy_draws <- model.matrix(exp_fit_transformed) %*% t(get_posterior_draws(exp_fit_transformed))
+      logy_draws <- model.matrix(fit) %*% t(get_posterior_draws(fit))
       y_draws <- exp(logy_draws)
       y_post_means <- rowMeans(y_draws)
      rslt <- mean(abs(y_post_means - fit$data[as.character(fit$formula)[2]]))

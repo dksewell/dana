@@ -32,6 +32,25 @@ server <- function(input, output, session) {
     val
   }) # Credible interval reactive
 
+
+
+  observeEvent(
+    input$id_select_flowchart,
+
+    handlerExpr = {
+
+      if (input$id_select_flowchart == "Continuous"){
+        output$demo_flowchart <- renderGrViz({
+          grViz(DiagrammeR::generate_dot(continuous_base_flowchart))
+        })
+      }
+      if (input$id_select_flowchart == "Count"){
+        output$demo_flowchart <- renderGrViz({
+          grViz(DiagrammeR::generate_dot(count_base_flowchart))
+        })
+      }
+    })
+
   # Observe Events -------------------------------------------------------------
 
   ## Execute when user presses 'Upload Data' -------
@@ -161,6 +180,9 @@ server <- function(input, output, session) {
                     cont_vars = input$continuous_vars,
                     group_var = input$grouping_vars)
   })
+
+
+
 
 
 

@@ -536,46 +536,13 @@ ui <- navbarPage(
   tabPanel("Model Cascade",
            page_fluid(
              titlePanel("Model Cascade Information"),
-             uiFlowchart("flowchart"),
-             div(class = "content",
-                 HTML("Prospective Cohort (i.e. mixed models)
-                      <ul>
-                      <li> Continuous Outcome </li>
-                        <ul>
-                        <li> Fit Bayesian Gaussian GLMER </li>
-                          <ul>
-                            <li> If Bayesian p-value for deviance is OK, use Bayesian Gaussian GLMER </li>
-                            <li> If Bayesian p-value for deviance is high or low and y > 0, fit nonparametric Bayesian Gaussian GLM with log transform
-                            and fit nonparametric Bayesian Gaussian GLM without transforming </li>
-                              <ul>
-                                <li> Compare expected absolute loss relative to median posterior predictions, and use the model that has lowest value
-                              </ul>
-                            <li> If Bayesian p-value for deviance is high or low and y < 0, fit nonparametric Bayesian Gaussian GLM </li>
-                          </ul>
-                        </ul>
-                      <li> Binary Outcome </li>
-                        <ul>
-                          <li> Fit Bayesian Binomial GLMER </li>
-                            <ul>
-                          <li> If Bayesian p-value for deviance is high or low, use nonparametric Bayesian GLM with binary outcome </li>
-                          <li> If Bayesian p-value for deviance is OK, use Bayesian GLMER with binary outcome </li>
-                          </ul>
-                        </ul>
-                      <li> Count Outcome  </li>
-                        <ul>
-                       <li> Fit Bayesian Poisson GLM </li>
-                        <ul>
-                          <li> If Bayesian p-value for deviance is OK, use Bayesian poisson GLMER </li>
-                          <li> If Bayesian p-value for deviance is high or low, fit Bayesian negative binomial GLMER </li>
-                          <ul>
-                            <li> If Bayesian p-value for deviance is OK, use Bayesian GLMER with negative binomial outcome </li>
-                            <li> If Bayesian p-value for deviance is high or low, fit nonparametric poisson GLM </li>
-                          </ul>
-                          </ul>
-                        </ul>
-                      </ul>",
-                      )
-           ))),
+             selectInput(inputId = "id_select_flowchart", choices =
+                           c("Continuous", "Count"),
+                         label = "Select flowchart"),
+             grVizOutput("demo_flowchart")
+
+
+           )),
 
   # Examples -------------------------------------------------------------------
 

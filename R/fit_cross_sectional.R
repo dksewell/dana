@@ -10,6 +10,7 @@
 #' @param pred_cat_vars description
 #' @param pred_cont_vars description
 #' @param pred_cat_vars_ref_levels description
+#' @param offset_var description
 #' @param ci_level description
 #' @details
 #'
@@ -28,6 +29,7 @@ fit_cross_sectional <- function(
   pred_cat_vars = NULL,
   pred_cont_vars = NULL,
   pred_cat_vars_ref_levels = NULL,
+  offset_var = NULL,
   ci_level = NULL) {
 
   rslt <- list()
@@ -76,6 +78,47 @@ fit_cross_sectional <- function(
         DT::datatable()
     }
 
+  # Count
+  if (response_type == "Count"){
+
+    dana_fit <- fit_cross_sectional_count(
+      data = data,
+      prior = prior,
+      response_var = response_var,
+      pred_cat_vars = pred_cat_vars,
+      pred_cont_vars = pred_cont_vars,
+      pred_cat_vars_ref_levels = pred_cat_vars_ref_levels,
+      offset_var = offset_var,
+      ci_level = ci_level
+    )
+
+    interpretation <- interpret.lm_b(
+      dana_fit = dana_fit
+    )
+
+    # Results list
+    rslt$flowchart <- modify_count_flowchart(dana_fit) |> DiagrammeR::generate_dot()
+    rslt$interpretation <- interpret.lm_b(dana_fit = dana_fit)
+    rslt$dana_fit <- dana_fit
+    rslt$summary <- dana_fit$fit$summary |>
+      setNames(
+        c("Variable",
+          "Estimate", "Lower CI Bound",
+          "Upper CI Bound",
+          "PDir", "ROPE", "ROPE Bounds")
+      ) |>
+      DT::datatable() |>
+      DT::formatSignif(columns = 2:6, digits = 3)
+    rslt$interpret_notes <- paste0("For poisson (count) data, the ROPE is built under the principle that a predictor's effect is considered negligible ",
+                                         "if a large change in the predictor (two standard deviations) would change the rate ratio by a very ",
+                                         "small amount (1.125). The ROPE bounds describe the range of coefficient values ",
+                                         "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
+                                         "significant association between the predictor and outcome.")
+    rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula),
+                                "Prior" = dana_fit$fit$prior) |>
+      DT::datatable()
+  }
+
   return(rslt)
 }
 
@@ -98,5 +141,6 @@ fit_cross_sectional <- function(
 # )
 
 # custom_fit1 <- fit_cross_sectional(mydat, pred_cont_vars = c("a","b"), response_var = "y", response_type = "Continuous")
+
 
 

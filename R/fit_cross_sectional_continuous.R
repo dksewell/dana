@@ -9,7 +9,7 @@
 #' @param pred_cat_vars_ref_levels description
 #' @param ci_level description
 #' @details
-#' 
+#'
 #' Returns a list subject to model cascade. Information includes
 #' final model fit, any intermediary test statistics.
 #'
@@ -29,7 +29,7 @@ fit_cross_sectional_continuous <- function(
     pred_cont_vars = NULL,
     pred_cat_vars_ref_levels = NULL,
     ci_level = NULL) {
-      
+
 
   # Preprocessing --------------------------------------------------------------
 
@@ -107,8 +107,7 @@ fit_cross_sectional_continuous <- function(
   rslt$parametric_log_transformed <- bayesics::glm_b(
     family = "gaussian",
     formula = log_transformed_formula,
-    data = data,
-    prior = prior,
+    data = data
     )
 
   rslt$bpval_parametric_log_transformed <- bayesics::bayes_pvalue(rslt$parametric_log_transformed)$bpval
@@ -130,9 +129,8 @@ fit_cross_sectional_continuous <- function(
     data = data
   )
 
-  rslt$gof_nonparametric_log_transformed <- 1
-  rslt$gof_nonparametric_untransformed <- 2
-  print("replacement needed! XXX")
+  rslt$gof_nonparametric_log_transformed <- np_glm_b_gof(rslt$nonparametric_log_transformed, log_transformed = TRUE)
+  rslt$gof_nonparametric_untransformed <- np_glm_b_gof(rslt$nonparametric_untransformed, log_transformed = FALSE)
 
   rslt$gof_comparison <- rslt$gof_nonparametric_log_transformed < rslt$gof_nonparametric_untransformed
 
