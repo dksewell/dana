@@ -95,6 +95,8 @@ continuous_base_flowchart <- create_graph() |>
 
 continuous_base_flowchart |> render_graph()
 
+# --------------------------
+
 binary_base_flowchart <- create_graph() |>
 
   # Add nodes
@@ -140,8 +142,86 @@ binary_base_flowchart <- create_graph() |>
   set_node_attrs_ws(node_attr = "shape", value = "circle") |>
   clear_selection()
 
+
+
+
+
+
+
+# ------------------------------------------
+
+count_base_flowchart <- create_graph() |>
+
+  # Add nodes
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = " \n Poisson GLM", type = "final_model") |>
+  set_node_position(node = 1, x = 2, y = 6) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "NP GLM", type = "final_model") |>
+  set_node_position(node = 2, x = 7.5, y = 6) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "Negative Binomial GLM", type = "final_model") |>
+  set_node_position(node = 3, x = 7.5, y = 2) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "Count Outcome", type = "outcome") |>
+  set_node_position(node = 4, x = 0, y = 5.5) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "P_SW Small/Large", type = "test") |>
+  set_node_position(node = 5, x = 2, y = 4) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "P_SW Small/Large", type = "test") |>
+  set_node_position(node = 6, x = 7.5, y = 4) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = " \n Poisson GLM", type = "model") |>
+  set_node_position(node = 7, x = 0, y = 4) |>
+  add_node(node_aes = node_aes(fixedsize = FALSE), label = "Negative Binomial GLM", type = "model") |>
+  set_node_position(node = 8, x = 4.5, y = 4) |>
+
+  # Add edges
+  add_edge(from = 4, to = 7) |>
+  add_edge(from = 7, to = 5) |>
+  add_edge(from = 5, to = 1, edge_aes = edge_aes(label = "No")) |>
+  add_edge(from = 6, to = 2, edge_aes = edge_aes(label = "Yes")) |>
+  add_edge(from = 5, to = 8, edge_aes = edge_aes(label = "Yes")) |>
+  add_edge(from = 6, to = 3, edge_aes = edge_aes(label = "No")) |>
+  add_edge(from = 8, to = 6) |>
+
+
+
+
+  # Apply global formatting
+  select_nodes() |>
+  set_node_attrs(node_attr = "fontcolor", values = "black") |> #Set all text to black
+  set_node_attrs(node_attr = "penwidth", values = 1) |>
+  clear_selection() |>
+
+  select_edges() |>
+  set_edge_attrs_ws( edge_attr = "color", value = "black") |>
+  clear_selection() |>
+
+  # Apply formatting to outcome nodes
+  select_nodes(conditions = type == "outcome") |>
+  set_node_attrs_ws(node_attr = "fillcolor", value = "white") |>
+  set_node_attrs_ws(node_attr = "shape", value = "square") |>
+  clear_selection() |>
+
+  # Apply formatting to model nodes
+  select_nodes(conditions = type == "model") |>
+  set_node_attrs_ws(node_attr = "fillcolor", value = "lightblue") |>
+  set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
+  clear_selection() |>
+
+  # Apply formatting to test nodes
+  select_nodes(conditions = type == "test") |>
+  set_node_attrs_ws(node_attr = "fillcolor", value = "lightyellow") |> #Set all text to black
+  set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
+  clear_selection() |>
+
+  # Apply formatting to final_model nodes
+  select_nodes(conditions = type == "final_model") |>
+  set_node_attrs_ws(node_attr = "fillcolor", value = "orange") |> #Set all text to black
+  set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
+  clear_selection()
+
+count_base_flowchart |> render_graph()
+
+
 usethis::use_data(binary_base_flowchart,
                   continuous_base_flowchart, internal = TRUE, overwrite = TRUE)
+
 
 
 
