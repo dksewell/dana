@@ -13,6 +13,10 @@
 
 np_glm_b_gof <- function(fit, log_transformed = FALSE){
 
+  print(class(fit))
+  print(fit)
+  print(fit$family$family)
+  print(model.matrix(fit))
   if (fit$family$family == "gaussian" & log_transformed == FALSE){
       y_draws <- model.matrix(fit) %*% t(get_posterior_draws(fit))
       y_post_means <- rowMeans(y_draws)
@@ -32,4 +36,11 @@ np_glm_b_gof <- function(fit, log_transformed = FALSE){
   return(rslt)
 
 }
+
+
+# pima <- MASS::pima.te
+# npfit<- bayesics::np_glm_b(formula = skin ~ bp, data = pima)
+# model.matrix(npfit)
+
+
 

@@ -52,7 +52,7 @@ model.matrix(exp_fit_transformed) %*% t(get_posterior_draws(exp_fit_transformed)
 y_post_draws_1 <- exp(model.matrix(exp_fit_transformed) %*% t(get_posterior_draws(exp_fit_transformed)))
 
 # Get MAP estimates means of the y values
-y_post_means_1 <- rowMeans(y_post_draws_1) 
+y_post_means_1 <- rowMeans(y_post_draws_1)
 
 # Get AEL by comparing MAP posterior of y's to the actual y values
 mean(abs(y_post_means_1 - exp_dat$y))
@@ -73,7 +73,7 @@ model.matrix(exp_fit_untransformed) # 100 x 2
 y_post_draws_2 <- model.matrix(exp_fit_untransformed) %*% t(get_posterior_draws(exp_fit_untransformed))
 
 # Get MAP estimates means of the y values
-y_post_means_2 <- rowMeans(y_post_draws_2) 
+y_post_means_2 <- rowMeans(y_post_draws_2)
 
 # Get AEL by comparing MAP posterior of y's to the actual y values
 mean(abs(y_post_means_2 - exp_dat$y))
@@ -83,7 +83,36 @@ points(exp_dat$x, y_post_means_2, col = "blue")
 points(exp_dat$x, y_post_means_1, col = "red")
 
 
-# Question: with large sample approximation, is it appropriate to treat posterior draws generated from the 
+# Question: with large sample approximation, is it appropriate to treat posterior draws generated from the
 # distribution as that distribution itself? i.e. comparing individual draws from N(betahat, Sigma)
 # to get approximate GOF? It feels as if using the values from MCMC or some kind of computational
 # would be a better approach for GOF.
+
+# Need to do this because of the transformation of posterior draws on the log scale
+# requires individual draws, not just exponentiating the posterior mean
+
+
+
+# Why can I not access model matrix from this fit?:
+
+pima <- MASS::Pima.te
+names(pima)
+head(pima)
+fit1<- bayesics::np_glm_b(formula = skin ~ bp, family = "gaussian", data = pima)
+model.matrix(fit1)
+
+class(pima)
+
+
+# Reassigning to a new df works:
+x <- pima$bp
+y <- pima$skin
+z <- pima$glu
+
+dat <- data.frame(xasdf = x, yfdsa = y)
+class(dat)
+
+fit2 <- np_glm_b(formula = y ~ x, family = "gaussian", data = dat)
+model.matrix(fit2)
+
+

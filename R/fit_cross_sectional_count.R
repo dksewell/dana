@@ -10,7 +10,7 @@
 #' @param offset_var description
 #' @param ci_level description
 #' @details
-#' 
+#'
 #' Returns a list subject to model cascade. Information includes
 #' final model fit, any intermediary test statistics.
 #'
@@ -46,7 +46,7 @@ ref_list <- lapply(X = seq_along(pred_cat_vars_ref_levels), FUN = function(i){
 ## Apply reference levels to all categorical predictors
 if (!is.null(pred_cat_vars_ref_levels)){
   ref_level_list <- lapply(setNames(pred_cat_vars_ref_levels, pred_cat_vars), function(x) x)
-  
+
   data <- data |>
     dplyr::mutate(
       dplyr::across(dplyr::all_of(pred_cat_vars), ~ {
@@ -131,6 +131,5 @@ if (rslt$bpval_nb < 0.05 || rslt$bpval_nb > 0.95) {
   # pima <- MASS::Pima.te
   # pima_fit1 <- fit_cross_sectional_count(pima, response_var = "npreg", pred_cat_vars = c("type"),
   #                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes"), offset_var = "age")
+  #
 
-  
-  

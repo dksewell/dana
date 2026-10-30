@@ -133,14 +133,18 @@ fit_cross_sectional <- function(
 #   pred_cat_vars_ref_levels = "Yes",
 #   ci_level = 0.95)
 
-
+#
 # mydat <- data.frame(
 #   a = runif(50,0,1),
 #   b = runif(50,0,1),
 #   y = rexp(n = 50, 4)
 # )
-
+#
 # custom_fit1 <- fit_cross_sectional(mydat, pred_cont_vars = c("a","b"), response_var = "y", response_type = "Continuous")
 
-
-
+# pima <- MASS::Pima.te
+# pima_fit1 <- fit_cross_sectional(pima, response_type = "Count", response_var = "npreg", pred_cat_vars = c("type"),
+#                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes"), offset_var = "age")
+#
+#
+# pima_fit1$flowchart |> render_graph()

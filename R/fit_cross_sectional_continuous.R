@@ -129,6 +129,8 @@ fit_cross_sectional_continuous <- function(
     data = data
   )
 
+  print(class(rslt$nonparametric_log_transformed))
+  print(rslt$nonparametric_log_transformed)
   rslt$gof_nonparametric_log_transformed <- np_glm_b_gof(rslt$nonparametric_log_transformed, log_transformed = TRUE)
   rslt$gof_nonparametric_untransformed <- np_glm_b_gof(rslt$nonparametric_untransformed, log_transformed = FALSE)
 
@@ -159,5 +161,5 @@ fit_cross_sectional_continuous <- function(
 
 # pima <- MASS::Pima.te
 # pima$npreg <- factor(pima$npreg)
-# pima_fit1 <- fit_cross_sectional_continuous(pima, response_var = "skin", pred_cat_vars = c("type", "npreg"),
-#                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes", "3"))
+# pima_fit1 <- fit_cross_sectional_continuous(pima, response_var = "skin", pred_cat_vars = c("type"),
+#                                     pred_cont_vars = c("npreg", "glu", "bp", "bmi", "ped", "age"), pred_cat_vars_ref_levels = c("Yes", "3"))
