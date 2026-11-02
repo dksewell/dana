@@ -127,9 +127,9 @@ if (rslt$bpval_nb < 0.05 || rslt$bpval_nb > 0.95) {
 }
 
 }
-
+  #
   # pima <- MASS::Pima.te
   # pima_fit1 <- fit_cross_sectional_count(pima, response_var = "npreg", pred_cat_vars = c("type"),
   #                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes"), offset_var = "age")
-  #
+
 

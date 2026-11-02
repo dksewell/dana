@@ -73,8 +73,7 @@ fit_cross_sectional <- function(
                "small amount (a tenth of the outcome's standard deviation). The ROPE bounds describe the range of coefficient values ",
                "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
                "significant association between the predictor and outcome.")
-      rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula),
-                                  "Prior" = dana_fit$fit$prior) |>
+      rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula)) |>
         DT::datatable()
     }
 
@@ -114,8 +113,7 @@ fit_cross_sectional <- function(
                                          "small amount (1.125). The ROPE bounds describe the range of coefficient values ",
                                          "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
                                          "significant association between the predictor and outcome.")
-    rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula),
-                                "Prior" = dana_fit$fit$prior) |>
+    rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula)) |>
       DT::datatable()
   }
 
@@ -133,7 +131,7 @@ fit_cross_sectional <- function(
 #   pred_cat_vars_ref_levels = "Yes",
 #   ci_level = 0.95)
 
-#
+
 # mydat <- data.frame(
 #   a = runif(50,0,1),
 #   b = runif(50,0,1),
@@ -141,10 +139,15 @@ fit_cross_sectional <- function(
 # )
 #
 # custom_fit1 <- fit_cross_sectional(mydat, pred_cont_vars = c("a","b"), response_var = "y", response_type = "Continuous")
-
+#
 # pima <- MASS::Pima.te
 # pima_fit1 <- fit_cross_sectional(pima, response_type = "Count", response_var = "npreg", pred_cat_vars = c("type"),
 #                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes"), offset_var = "age")
 #
 #
 # pima_fit1$flowchart |> render_graph()
+
+
+
+
+

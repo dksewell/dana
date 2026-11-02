@@ -83,15 +83,22 @@ modify_continuous_flowchart <- function(dana_fit){
   ## Test values
   test_vals <- c(dana_fit$bpval_parametric_untransformed,
                  as.logical(dana_fit$positive_response),
-                 dana_fit$bpval_parametric_log_transformed,
-                 dana_fit$gof_nonparametric_log_transformed,
-                 dana_fit$gof_nonparametric_untransformed,
-                 dana_fit$gof_comparison
+                 dana_fit$bpval_parametric_log_transformed
   ) |>
     round(digits = 3) |>
     as.character()
 
+  # Add GOF values
+  if (dana_fit$term_node %in% c(4, 5)){
+    test_vals <- test_vals |>
+      append(paste0(round(dana_fit$gof_nonparametric_untransformed, digits = 3),  " < ", round(dana_fit$gof_nonparametric_log_transformed, digits = 3)))
+  }
+
+
   ## Append test values to old labels
+  print("here2")
+  print(test_labels)
+  print(test_vals)
   test_labels[seq_along(test_vals)] <- paste0(test_labels[seq_along(test_vals)], "\n (", test_vals, ")")
 
   ## Apply changes
@@ -152,7 +159,7 @@ modify_continuous_flowchart <- function(dana_fit){
     invert_selection() |>
       set_node_attrs_ws(node_attr = fillcolor, value = "grey") |>
       set_node_attrs_ws(node_attr = fontcolor, value = "grey50") |>
-        select_edges_by_node_id(nodes = c(6, 11, 7, 8, 12, 9, 13, 10, 4)) |>
+        select_edges_by_node_id(nodes = c(6, 11, 7, 8, 12, 9, 13, 4)) |>
           set_edge_attrs_ws(edge_attr = color, value = "black") |>
             invert_selection() |>
               set_edge_attrs_ws(edge_attr = color, value = "grey")
@@ -164,7 +171,7 @@ modify_continuous_flowchart <- function(dana_fit){
     invert_selection() |>
       set_node_attrs_ws(node_attr = fillcolor, value = "grey") |>
       set_node_attrs_ws(node_attr = fontcolor, value = "grey50") |>
-        select_edges_by_node_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 10, 5)) |>
+        select_edges_by_node_id(nodes = c(6, 13, 7, 8, 14, 9, 16, 15, 11, 5)) |>
           set_edge_attrs_ws(edge_attr = color, value = "black") |>
             invert_selection() |>
               set_edge_attrs_ws(edge_attr = color, value = "grey")

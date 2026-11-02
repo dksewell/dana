@@ -125,7 +125,22 @@ ui <- navbarPage(
                   tags$b("Choose File:"),
                   tags$br("Accepts .csv .xlsx .rds")),
                 accept = c(".csv", ".xlsx", ".rds")),
-              checkboxInput("select_rows", "Select custom data?"),
+              checkboxInput("select_rows",
+                            label = tagList(
+                              "Select Custom Subset ",
+                              tooltip(
+                                bs_icon(
+                                  name = "info-circle-fill",
+                                  style = "color: #007bc0; cursor: pointer;"
+                                ),
+                                "
+                                Choose this option if only a subset of the
+                                data should be analyzed.
+                                ",
+                                placement = "right"
+                              )
+                            )),
+
               conditionalPanel(
                 condition = "input.select_rows",
                 numericInput("start_row", "Start Row (Row with Variable Names)", value = NULL),
@@ -359,6 +374,7 @@ ui <- navbarPage(
                             checkboxInput("show_interpret_advanced", "Show advanced information", FALSE),
                             conditionalPanel(
                               condition = "input.show_interpret_advanced",
+
                                 tags$h3(tags$b("Fit Info")),
                                 conditionalPanel(
                                   uiScrollPlot(id = "scrollplot")
@@ -566,6 +582,45 @@ ui <- navbarPage(
   tabPanel("Glossary",
            fluidPage(
              div(class = "content",
+                 tags$p(tags$b("Goodness of Fit (GOF)"),
+                        paste0("
+                               Quantification of the match between observed values
+                               and those predicted by the model. In a nonparametric
+                               regression setting, this is calculated by the average
+                               absolute error between the posterior mean of each observation
+                               and its observed value. Lower values indicate
+                               the model predictions match the data closely, while higher
+                               values indicate that they do not match.
+                               "
+                               )),
+                 tags$p(tags$b("Bayesian P-Value (BPVal)"),
+                        paste0("
+                                A measure of goodness of fit evaluated through
+                                the posterior predictive distribution. In particular,
+                                in the regression setting, compares
+                                a statistic calculated among the observed
+                                data and the predicted data. The choice
+                                of test statistic is highly flexible, but
+                                in this case uses the Shaprio Wilk test statistic
+                                for gaussian response regression and deviance
+                                otherwise. The BPVal is the probability that the statistic
+                                is larger among the observed data
+                                relative to the predictive data.
+                                Values of the BPVal that are close 0 or 1 indicate
+                                inadequate fit from the model.
+                                to 0 or 1 indicate inadequate fit
+                               "
+                        )),
+                 tags$p(tags$b("Log Transformation"),
+                        paste0("
+                                Models that represent outcomes on the log scale
+                                sometimes model the observed data than those that do not
+                                transform. In a regression setting, this amounts to taking the log
+                                of the outcome variable and modelling this as the outcome.
+                               "
+                        )),
+
+
                  HTML("<h1> <b> Study Designs </b> </h1>"),
                  HTML("<p> <b> Cross Sectional </b> A type of study design which captures
                       information at a single point in time. Individuals are sampled

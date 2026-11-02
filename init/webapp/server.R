@@ -148,7 +148,22 @@ server <- function(input, output, session) {
     ## Render all of the specified selectInput widgets
     tagList(
       hr(),
-      tags$p(tags$b("Select reference levels for categorical variables:")),
+      tagList(
+        "Select Reference Levels: ",
+        tooltip(
+          bs_icon(
+            name = "info-circle-fill",
+            style = "color: #007bc0; cursor: pointer;"
+          ),
+          "
+          This is a single value among the variable that acts as
+          a baseline. For example, non-exercising status
+          can act as baseline behavior
+          relative to exercising.
+          ",
+          placement = "right"
+        )
+      ),
       lapply(1:length(level_names), function(i){
         selectInput(inputId = level_ids[[i]],
                     label = level_names[i],
@@ -420,22 +435,6 @@ server <- function(input, output, session) {
         #
         # }
 
-
-        observeEvent(input[[ns_interpret("select_all_vars_interpret")]], {
-          updateSelectInput(
-            session,
-            ns_interpret("vars_interpret"),
-            selected = names(analysis$interpret)
-          )
-        })
-
-        observeEvent(input[[ns_interpret("clear_all_vars_interpret")]], {
-          updateSelectInput(
-            session,
-            ns_interpret("vars_interpret"),
-            selected = character(0)
-          )
-        })
 
         output$analysis_interpret_notes <- renderUI({
           tagList(

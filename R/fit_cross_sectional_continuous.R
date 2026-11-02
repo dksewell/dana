@@ -87,13 +87,15 @@ fit_cross_sectional_continuous <- function(
     return(rslt)
   }
 
+  ## Nonparametric Untransformed model
+  rslt$nonparametric_untransformed <- bayesics::np_glm_b(
+    family = "gaussian",
+    formula = untransformed_formula,
+    data = data
+  )
+
   ## Terminal Node 2
   if (rslt$positive_response == FALSE) {
-    rslt$nonparametric_untransformed <- bayesics::np_glm_b(
-      family = "gaussian",
-      formula = untransformed_formula,
-      data = data
-    )
     rslt$fit <- rslt$nonparametric_untransformed
     rslt$term_node <- 2
     rslt$log_transformed <- TRUE
@@ -129,10 +131,14 @@ fit_cross_sectional_continuous <- function(
     data = data
   )
 
-  print(class(rslt$nonparametric_log_transformed))
-  print(rslt$nonparametric_log_transformed)
-  rslt$gof_nonparametric_log_transformed <- np_glm_b_gof(rslt$nonparametric_log_transformed, log_transformed = TRUE)
-  rslt$gof_nonparametric_untransformed <- np_glm_b_gof(rslt$nonparametric_untransformed, log_transformed = FALSE)
+  print("here2:")
+  print(rslt$nonparametric_untransformed$family$family)
+  print(rslt$nonparametric_untransformed$family)
+
+  rslt$gof_nonparametric_log_transformed <- np_glm_b_gof(rslt$nonparametric_log_transformed, log_transformed = TRUE, response_var = response_var)
+  rslt$gof_nonparametric_untransformed <- np_glm_b_gof(rslt$nonparametric_untransformed, log_transformed = FALSE, response_var = response_var)
+
+
 
   rslt$gof_comparison <- rslt$gof_nonparametric_log_transformed < rslt$gof_nonparametric_untransformed
 
@@ -162,4 +168,4 @@ fit_cross_sectional_continuous <- function(
 # pima <- MASS::Pima.te
 # pima$npreg <- factor(pima$npreg)
 # pima_fit1 <- fit_cross_sectional_continuous(pima, response_var = "skin", pred_cat_vars = c("type"),
-#                                     pred_cont_vars = c("npreg", "glu", "bp", "bmi", "ped", "age"), pred_cat_vars_ref_levels = c("Yes", "3"))
+#                                     pred_cont_vars = "glu", pred_cat_vars_ref_levels = c("Yes", "3"))
