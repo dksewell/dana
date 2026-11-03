@@ -457,19 +457,21 @@ server <- function(input, output, session) {
 
           # req((input$group_var_onesample_csnr != input$response_var_csnr) || input$one_sample_group_csnr == 0)
 
-          analysis <- dana::t_test(
+          dana::t_test(
             data = user_data(),
             outcome_var = input$response_var_csnr,
             two_sample = FALSE,
             group_var = input$group_var_onesample_csnr,
             one_sample_group_val = input$group_val_csnr,
             ci_level = ci_level()
-          )
+          ) |> analysis()
 
-          output$analysis_info <- renderDT({analysis$table_hr})
-          output$fit_info <- renderDT({analysis$fit_table})
-          serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
-          output$analysis_interpret <- renderUI({HTML(paste(analysis$interpret, "<br>"))})
+          print(analysis())
+
+          output$analysis_info <- renderDT({analysis()$table_hr})
+          output$fit_info <- renderDT({analysis()$fit_table})
+          serverScrollPlot(id = "scrollplot", ggplot_list = analysis()$plots)
+          output$analysis_interpret <- renderUI({HTML(paste(analysis()$interpret, "<br>"))})
           output$analysis_interpret_notes <- renderUI({
             tagList(
               tags$hr(),

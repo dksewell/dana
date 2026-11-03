@@ -369,6 +369,7 @@ ui <- navbarPage(
 
 
                             uiOutput("id_vars_interpret"),
+                            uiOutput("analysis_interpret"),
                             uiOutput("analysis_interpret_notes"),
 
                             checkboxInput("show_interpret_advanced", "Show advanced information", FALSE),
