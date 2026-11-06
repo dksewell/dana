@@ -120,7 +120,7 @@ t_test <- function(data,
 
   if (two_sample == FALSE) {
 
-    if (is.null(one_sample_group_val) == TRUE){
+    if (is.null(one_sample_group_val) == TRUE || one_sample_group_val == "None"){
 
       fit <- bayesics::t_test_b(x = data[[outcome_var]],
                                 CI_level = ci_level)

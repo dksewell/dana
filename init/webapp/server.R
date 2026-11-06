@@ -100,6 +100,20 @@ server <- function(input, output, session) {
 
   })
 
+
+  observeEvent(input$show_flowchart, {
+
+    showModal(
+      modalDialog(
+        title = "Flowchart",
+        grVizOutput("flowchart"),
+        size = "l",
+        easyClose = TRUE
+      )
+    )
+
+  })
+
   ## Execute when user presses 'Continue' or when any variables are changed ----
 
   observeEvent(
@@ -268,7 +282,7 @@ server <- function(input, output, session) {
     updateSelectInput(
       session,
       "group_val_csnr",
-      choices = user_data()[[input$group_var_onesample_csnr]]
+      choices = c(user_data()[[input$group_var_onesample_csnr]], "None")
     )
 
 
@@ -438,7 +452,8 @@ server <- function(input, output, session) {
 
         output$analysis_interpret_notes <- renderUI({
           tagList(
-            tags$hr(),
+            tags$h4("Estimate"),
+            tags$p(paste0("The estimate represents the 'best guess' of the effect under the specified model.")),
             tags$h4(paste0(ci_level() * 100,"% Credible Interval")),
             tags$p(paste0("The \"", ci_level() * 100, "% CI\" reported here is a credible interval. Based on the data, there is a ", ci_level() * 100, "% probability that the true effect falls within this range.")),
             tags$h4("Probability of Direction (PDir)"),
@@ -497,7 +512,7 @@ server <- function(input, output, session) {
 
           output$analysis_info <- renderDT({analysis$table_hr})
           output$fit_info <- renderDT({analysis$fit_table})
-          #serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
+          serverScrollPlot(id = "scrollplot", ggplot_list = analysis$plots)
 
           output$analysis_interpret <- renderUI({
             tagList(
@@ -520,7 +535,8 @@ server <- function(input, output, session) {
 
           output$analysis_interpret_notes <- renderUI({
             tagList(
-              tags$hr(),
+              tags$h4("Estimate"),
+              tags$p(paste0("Represents the estimate of the given parameter based on the model.")),
               tags$h4(paste0(ci_level() * 100,"% Credible Interval")),
               tags$p(paste0("The \"", ci_level() * 100, "% CI\" reported here is a credible interval. Based on the data, there is a ", ci_level() * 100, "% probability that the true parameter of interest falls within this range.")),
               tags$h4("Region of Practical Equivalence (ROPE)"),

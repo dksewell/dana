@@ -73,7 +73,6 @@ fit_cross_sectional_continuous <- function(
     data = data
     )
   rslt$bpval_parametric_untransformed <- bayesics::bayes_pvalue(rslt$parametric_untransformed)$bpval
-  print(rslt$bpval_parametric_untransformed)
 
   ## Positive outcome
   rslt$positive_response <- ifelse(all(data[[response_var]] > 0), yes = TRUE, no = FALSE)
@@ -131,9 +130,7 @@ fit_cross_sectional_continuous <- function(
     data = data
   )
 
-  print("here2:")
-  print(rslt$nonparametric_untransformed$family$family)
-  print(rslt$nonparametric_untransformed$family)
+
 
   rslt$gof_nonparametric_log_transformed <- np_glm_b_gof(rslt$nonparametric_log_transformed, log_transformed = TRUE, response_var = response_var)
   rslt$gof_nonparametric_untransformed <- np_glm_b_gof(rslt$nonparametric_untransformed, log_transformed = FALSE, response_var = response_var)

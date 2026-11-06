@@ -180,7 +180,7 @@ ui <- navbarPage(
                     selectInput(
                       inputId ="continuous_vars",
                       label = tagList(
-                        "Select Continuous Variables: ",
+                        "Select Numeric Variables: ",
                         tooltip(
                           bs_icon(
                             name = "info-circle-fill",
@@ -339,18 +339,18 @@ ui <- navbarPage(
                                      actionButton("run_analysis", "Run Analysis")),
                               column(width = 8,
                                      tagList(tags$h3(tags$b("Study Info"))),
-                                     grVizOutput("flowchart", height = 500, width = 500),
                                      uiStudyInfo("studyinfo")),
                             ),
                             conditionalPanel(
                               condition = "input.run_analysis",
+                              hr(),
+                              tags$h3(tags$b("Reported Quantities")),
+                              withSpinner(uiOutput("analysis_interpret_notes"), type = 4),
                               tags$h3(tags$b("Results")),
                               withSpinner(DTOutput(outputId = "analysis_info"), type= 4),
                             ),
-
+                            hr(),
                             tagList(tags$h3(tags$b("Interpretation"))),
-
-
                             conditionalPanel(
                               condition = "(input.study_design === 'Cross-sectional (Regression)' ||
                                             input.study_design === 'Retrospective Cohort (Regression)') &&
@@ -361,29 +361,34 @@ ui <- navbarPage(
                               choices = NULL,
                               selected = NULL,
                               multiple = TRUE),
-                              actionButton(ns_interpret("select_all_vars_interpret"), "Select all"),
-                              actionButton(ns_interpret("clear_all_vars_interpret"), "Clear selection"),
-                              tags$br(),
+                              uiOutput("id_vars_interpret"),
+                              uiOutput("analysis_interpret"),
                             ),
-
-
-
-                            uiOutput("id_vars_interpret"),
+                            hr(),
                             uiOutput("analysis_interpret"),
-                            uiOutput("analysis_interpret_notes"),
-
-                            checkboxInput("show_interpret_advanced", "Show advanced information", FALSE),
+                            conditionalPanel("input.run_analysis > 0",
+                              checkboxInput("show_interpret_advanced", "Show advanced information", FALSE),
+                            ),
                             conditionalPanel(
-                              condition = "input.show_interpret_advanced",
+                              condition = "(input.study_design === 'Cross-sectional (Regression)' ||
+                                            input.study_design === 'Retrospective Cohort (Regression)') &&
+                                            input.show_interpret_advanced",
+                              tags$h3(tags$b("Regression Fit Info")),
+                              actionButton("show_flowchart", "Show Flowchart"),
+                              DTOutput(outputId = "fit_info"),
+                              uiOutput("interpret_advanced")
 
-                                tags$h3(tags$b("Fit Info")),
-                                conditionalPanel(
-                                  uiScrollPlot(id = "scrollplot")
-                                ),
-                              hr(),
-                                DTOutput(outputId = "fit_info")
-                              ),
-                            uiOutput("interpret_advanced"),
+                            ),
+                            conditionalPanel(
+                              condition = "(input.study_design === 'Cross-sectional (No Regression)') &&
+                                            input.show_interpret_advanced",
+                              tags$h3(tags$b("Model Fit Info")),
+                              uiOutput("interpret_advanced"),
+                              DTOutput(outputId = "fit_info"),
+                              uiScrollPlot(id = "scrollplot")
+                            ),
+                            hr(),
+
 
 
 
@@ -407,159 +412,19 @@ ui <- navbarPage(
                )
   ),
 
-  # Examples -------------------------------------------------------------------
+  # Model Cascade -------------------------------------------------------------------
 
-  tabPanel("Examples",
-           fluidPage(
-             div(class = "content",
-                 HTML("<h4> Below is an example data analysis in which we demonstrate how to use
-                    DANA. </h4>"),
-                 HTML("The goal of this example analysis is to understand
-                 <b> What is the relationship between clinical characteristics and
-                      probability of diabetes in Pima Indian women? </b>"),
-                 HTML("The data contain 532 complete case records among women living near Phoenix, AZ
-                      of Pima Indian heritage. A variety of clinical data were collected
-                      by the US National Institute of
-                      Diabetes and Digestive and Kidney Diseases.
-                      Data are sourced from the <i> kmed </i> package in R."),
-                 HTML("<h3> <b> Understanding Study Design </b> </h3>"),
-                 HTML("It is important
-                   to have an understanding of the type of study design involved, as
-                   this determines the type of questions we may answer and the
-                   types of analyses involved. DANA allows for the selection of a number
-                   of different study designs, though two common ones include:"),
-                 HTML("<h5> <b> Cross Sectional </b>  - This refers to a study performed
-                   at a specific point in time. As such, there is no
-                   time variable involved. These types of studies
-                   are often observational, without researchers introducing
-                   a treatment or intervention </h5>"),
-                 HTML("<h5> <b> Retrospective Cohort </b> - This refers to a predefined
-                      group of study units that are followed over time. Their
-                      outcomes are tracked over time. </h5>"),
-                 HTML("For the purposes of this analysis, we treat the study design
-                      as cross-sectional. To upload data to DANA, click on the
-                      ** Browse... ** button."),
-                 HTML("<div style = 'text-align:center;'>
-                      <img src = 'Images/01_Upload_Data.png', style = 'max-width:80%; height:auto;'>
-                      </div>"),
-                 HTML("After uploading data to DANA, you will see a data preview, which
-                      shows a small sample of observations from the data. This
-                      expects a table of observations (i.e. excel, csv) where
-                      the first row includes the variable names, and each
-                      subsequent row is an observation. The variables in our example analysis are as follows:"),
-                 HTML("<p> <ul>
-                        <li> <b> npreg </b> - Number of pregnancies </li>
-                        <li> <b> glu </b> - Plasma glucose concentration </li>
-                        <li> <b> bp </b> - Diastolic blood pressure (mmHg) </li>
-                        <li> <b> skin </b> - Triceps skin fold thickness (mm) </li>
-                        <li> <b> bmi </b> - Body mass index </li>
-                        <li> <b> ped </b> - Diabetes pedigree function </li>
-                        <li> <b> age </b> - Age (years) </li>
-                        <li> <b> type </b> - Diabetic (0 = no, 1 = yes) </li>
-                      </ul> </p>"),
-                 HTML("<p>Then, we can
-                      choose a type of study design from the drop down
-                      menu on the left. </p>"),
-                 HTML("<div style = 'text-align:center;'>
-                      <img src = 'Images/02_Choose_Study_Design.png', style = 'max-width:80%; height:auto;'>
-                      </div>"),
-                 HTML("<h3> <b> Select Analysis and Variables </b> </h3>"),
-                 HTML("The analysis type is selected next. <b> Univariate </b> analysis
-                      involves getting summary statistics for each individual variable.
-                      <b> Multivariate </b> analysis analyzes the relationship
-                      between the outcome and predictors"),
-                 HTML("<p> Variables to be used in the analysis must be designated by their type.
-                      <ul>
-                        <li> <b> Categorical Variable </b> - A variable that takes
-                        on distinct levels, groups, or labels, without possible
-                        in-between. Examples can place of residence such
-                        as a city or county.
-                          <ul>
-                            <li> <b> Binary Variable </b> - A type of categorical
-                            variable that only takes on two values. Examples
-                            can include whether or not a person has
-                            a history of a given comorbidity </li>
-                          </ul>
-                        <li> <b> Numeric Variable </b> - A variable that
-                        takes on specific numeric values. Examples can include
-                        diastolic blood pressure or height. </li>
-                        <li> <b> Ordinal Variable </b> - A variable that
-                        can take on ordered levels that do not correspond
-                        to numeric values. This can include rating physical
-                        activity on a scale of 1 to 5. A value of '1' may
-                        be less than a value of '5', but does not correspond
-                        to a specific measured level of activity. </li> </p>"),
-                 HTML("<p> Variables can be selected using the prefill menu. In
-                      our example analysis, the <b> output type </b> is binary -
-                      either individuals are diabetic or not, which is coded as either
-                      a 0 or 1. The <b> response variable </b> is the variable referring
-                      to this binary outcome - in this case it is the variable called type, referring to
-                      diabetic status. Finally, the other
-                      <b> covariates </b> are listed to include them in the model. After
-                      selecting variables, select the 'Run Analysis' button </p>"),
-                 HTML("<div style = 'text-align:center;'>
-                      <img src = 'Images/03_Select_Variables.png', style = 'max-width:80%; height:auto;'>
-                      </div>"),
-                 HTML("<h3> <b> Analyze Results </b> </h3>"),
-                 HTML("<p> Select the 'Analysis Output' to view the results of the regression
-                      model. This type of model is a Generalized Linear Model (GLM) (link here),
-                      which assumes that each of the covariates has a linear effect on
-                      the mean of the outcome. To interpret this, we say that
-                      a unit increase in one covariate results in a certain multiplicative
-                      effect on the odds ratio between having the outcome and
-                      not having the outcome. For instance, <b> each additional
-                      pregnancy is associated with multiplying the odds ratio of diabetes
-                      by 1.11 </b>. The other effects are interpreted in a similar manner.
-                      The CI_Lower and CI_Upper are the bounds
-                      of a 95% confidence interval for each covariate. In this case,
-                      confidence intervals that include a value
-                      of 1 represent no statistically significant effect. Thus,
-                      we can say that there is a statistically significant positive
-                      association between blood pressure and diabetes </p>"),
-                 HTML("<div style = 'text-align:center;'>
-                      <img src = 'Images/04_Regression_Results.png', style = 'max-width:80%; height:auto;'>
-                      </div>"),
-                 HTML("<h3> <b> Caution </b> </h3>"),
-                 HTML("<p> There are some important considerations in regression settings. </p>
-                      <ul>
-                        <li> Covariates are assumed to have linear effects on the outcome
-                        or odds ratio. Other types of effects require more complicated models. </li>
-                        <li> Correlations between observations are unaccounted for. Correlated
-                        data requires other methods such as mixed effects, which take into account
-                        how observations are related such as though
-                        repeated measurements on the same individual. </li>
-                        <li> Covariates are assumed to have independent effects. Therefore,
-                        variables that are related will have inflated variance (larger
-                        confidence intervals). Consider alternative approaches such
-                        as adding interaction effects or removing variables that
-                        are measuring the same thing on different scales. </li>
-                      </ul>
-                      <p> These assumptions should be assessed before reporting results. Consider
-                      consulting a trained statistician or biostatistician to ensure valid
-                      statistical conclusions. </p>"),
-
-
-
-
-
-
-
-
-
-
-             )
-           )
-  ),
-  tabPanel("Model Cascade",
-           page_fluid(
-             titlePanel("Model Cascade Information"),
-             selectInput(inputId = "id_select_flowchart", choices =
-                           c("Continuous", "Count"),
-                         label = "Select flowchart"),
-             grVizOutput("demo_flowchart")
-
-
-           )),
+  tabPanel(
+    title = "Model Cascade",
+    page_fluid(
+      titlePanel("Model Cascade Information"),
+      selectInput(
+        inputId = "id_select_flowchart",
+        choices = c("Continuous", "Count"),
+        label = "Select flowchart"),
+      grVizOutput("demo_flowchart")
+      )
+    ),
 
   # Examples -------------------------------------------------------------------
 

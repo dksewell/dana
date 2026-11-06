@@ -96,9 +96,7 @@ modify_continuous_flowchart <- function(dana_fit){
 
 
   ## Append test values to old labels
-  print("here2")
-  print(test_labels)
-  print(test_vals)
+
   test_labels[seq_along(test_vals)] <- paste0(test_labels[seq_along(test_vals)], "\n (", test_vals, ")")
 
   ## Apply changes

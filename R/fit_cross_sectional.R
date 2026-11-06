@@ -74,7 +74,7 @@ fit_cross_sectional <- function(
                "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
                "significant association between the predictor and outcome.")
       rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula)) |>
-        DT::datatable()
+        DT::datatable(options = list(dom = "t"))
     }
 
   # Count
@@ -114,7 +114,7 @@ fit_cross_sectional <- function(
                                          "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
                                          "significant association between the predictor and outcome.")
     rslt$fit_info <- data.frame("Formula" = deparse(dana_fit$fit$formula)) |>
-      DT::datatable()
+      DT::datatable(options = list(dom = "t"))
   }
 
   return(rslt)
