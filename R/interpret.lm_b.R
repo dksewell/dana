@@ -93,7 +93,7 @@ interpret.lm_b <- function(
     rope = paste0("The probability that the effect of ", var, " = ", level,
     " on the mean ",
                   outcome, " is outside the region of practical equivalence is estimated to be ",
-                  df$ROPE, ".")
+                  1 - df$ROPE, ".")
     }
 
     ## Interpret continuous variables
@@ -115,7 +115,7 @@ interpret.lm_b <- function(
       )
       rope = paste0("The probability that the effect of ",
                     var, " is outside the region of practical equivalence is estimated to be ",
-                    df$ROPE, ".")
+                    1 - df$ROPE, ".")
     }}
 
     # Log transformed continuous outcomes
@@ -142,7 +142,7 @@ interpret.lm_b <- function(
                   var, " = ", ref_level, ".")
     rope = paste0("The probability that the effect of ", var, " = ", level,
     " on the mean ",
-                  outcome, " is outside the region of practical equivalence is estimated to be ",
+                  1 - outcome, " is outside the region of practical equivalence is estimated to be ",
                   df$ROPE, ".")
     }
 
@@ -165,7 +165,7 @@ interpret.lm_b <- function(
       )
       rope = paste0("The probability that the effect of ",
                     var, " is outside the region of practical equivalence is estimated to be ",
-                    df$ROPE, ".")
+                    1 - df$ROPE, ".")
     }}
 
     # Count
@@ -194,7 +194,7 @@ interpret.lm_b <- function(
         rope = paste0("The probability that the effect of ", var, " = ", level,
                       " on the mean ",
                       outcome, " is outside the region of practical equivalence is estimated to be ",
-                      df$ROPE, ".")
+                      1 - df$ROPE, ".")
       }
 
       ## Interpret continuous variables
@@ -216,7 +216,7 @@ interpret.lm_b <- function(
         )
         rope = paste0("The probability that the effect of ",
                       var, " is outside the region of practical equivalence is estimated to be ",
-                      df$ROPE, ".")
+                      1 - df$ROPE, ".")
       }}
 
     ## Count outcomes with offset
@@ -244,7 +244,7 @@ interpret.lm_b <- function(
         rope = paste0("The probability that the effect of ", var, " = ", level,
                       " on the mean ",
                       outcome, " is outside the region of practical equivalence is estimated to be ",
-                      df$ROPE, ".")
+                      1 - df$ROPE, ".")
       }
 
       ## Interpret continuous variables
@@ -266,7 +266,7 @@ interpret.lm_b <- function(
         )
         rope = paste0("The probability that the effect of ",
                       var, " is outside the region of practical equivalence is estimated to be ",
-                      df$ROPE, ".")
+                      1 - df$ROPE, ".")
       }}
 
 

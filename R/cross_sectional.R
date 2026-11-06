@@ -253,8 +253,8 @@ cross_sectional <- function(
             pdir = paste0("We are ", pdir_val[i] * 100, "% sure that observations with ", cat_var[i], " = ",
                           cat_level[i], " has ", ifelse(coef[i] == 0, "the same ", ifelse(coef[i] > 0, "a higher ", "a lower ")), "mean ", outcome_var,
                           ifelse(coef[i] == 0, " as ", " than "), "observations with ", cat_var[i], " = ", cat_ref_levels[i], "."),
-            rope = paste0("The probability that the difference in the mean ", outcome_var, " is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+            rope = paste0("The probability that the difference in the mean ", outcome_var, " is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         } else {
           list(
@@ -266,8 +266,8 @@ cross_sectional <- function(
             pdir = paste0("We are ", pdir_val[i] * 100, "% sure that an increase in ", variable[i],
                           " leads to ", ifelse(coef[i] == 0, "no change", ifelse(coef[i] > 0, "an increase", "a decrease")),
                           " in the mean ", outcome_var, "."),
-            rope = paste0("The probability that the effect of ", variable[i], " is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+            rope = paste0("The probability that the effect of ", variable[i], " is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         }
       }), variable
@@ -290,8 +290,8 @@ cross_sectional <- function(
       paste0("For gaussian (continuous) data, the ROPE is built under the principle that a predictor's effect is considered negligible ",
              "if a large change in the predictor (two standard deviations) would shift the average outcome by a very ",
              "small amount (a tenth of the outcome's standard deviation). The ROPE bounds describe the range of coefficient values ",
-             "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
-             "significant association between the predictor and outcome.")
+             "that meet this condition. A large probability that the effect is inside the ROPE indicates practically ",
+             "negligible association between the predictor and outcome.")
 
   } else if (family == "poisson") {
 
@@ -325,8 +325,8 @@ cross_sectional <- function(
                           ifelse(is.null(offset_var) || offset_var == "None", "count of ", "rate of "), outcome_var,
                           ifelse(coef[i] == 1, " as ", " than "), "observations with ", cat_var[i], " = ", cat_ref_levels[i], "."),
             rope = paste0("The probability that the effect of ", cat_var[i], " for observations with ", cat_var[i], " = ", cat_level[i],
-                          " relative to the reference level (", cat_var[i], " = ", cat_ref_levels[i], ") is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+                          " relative to the reference level (", cat_var[i], " = ", cat_ref_levels[i], ") is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         } else {
           list(
@@ -339,8 +339,8 @@ cross_sectional <- function(
             pdir = paste0("We are ", pdir_val[i] * 100, "% sure that an increase in ", variable[i],
                           " leads to ", ifelse(coef[i] == 1, "no change", ifelse(coef[i] > 1, "an increase", "a decrease")),
                           " in the expected ", ifelse(is.null(offset_var) || offset_var == "None", "count of ", "rate of "), outcome_var, "."),
-            rope = paste0("The probability that the effect of ", variable[i], " is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+            rope = paste0("The probability that the effect of ", variable[i], " is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         }
       }), variable
@@ -350,8 +350,8 @@ cross_sectional <- function(
       paste0("For poisson (count) data, the ROPE is built under the principle that a predictor's effect is considered negligible ",
              "if a large change in the predictor (two standard deviations) would change the rate ratio by a very ",
              "small amount (1.125). The ROPE bounds describe the range of coefficient values ",
-             "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
-             "significant association between the predictor and outcome.")
+             "that meet this condition. A large probability that the effect is inside the ROPE indicates practically ",
+             "negligible association between the predictor and outcome.")
 
   } else if (family == "binomial") {
 
@@ -381,8 +381,8 @@ cross_sectional <- function(
                           cat_level[i], " has ", ifelse(coef[i] == 1, "the same ", ifelse(coef[i] > 1, "a higher ", "a lower ")), "odds of ", outcome_var,
                           ifelse(coef[i] == 1, " as ", " than "), "observations with ", cat_var[i], " = ", cat_ref_levels[i], "."),
             rope = paste0("The probability that the effect of ", cat_var[i], " for observations with ", cat_var[i], " = ", cat_level[i],
-                          " relative to the reference level (", cat_var[i], " = ", cat_ref_levels[i], ") is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+                          " relative to the reference level (", cat_var[i], " = ", cat_ref_levels[i], ") is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         } else {
           list(
@@ -393,8 +393,8 @@ cross_sectional <- function(
             pdir = paste0("We are ", pdir_val[i] * 100, "% sure that an increase in ", variable[i],
                           " leads to ", ifelse(coef[i] == 1, "no change", ifelse(coef[i] > 1, "an increase", "a decrease")),
                           " in the odds of ", outcome_var, "."),
-            rope = paste0("The probability that the effect of ", variable[i], " is outside the region of practical equivalence is estimated to be ",
-                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(1 - rope_val[i], 4))), ".")
+            rope = paste0("The probability that the effect of ", variable[i], " is inside the region of practical equivalence is estimated to be ",
+                          ifelse(rope_val[i] == 0, 0.9999, ifelse(rope_val[i] > 0.9999, "< 0.0001", round(rope_val[i], 4))), ".")
           )
         }
       }), variable
@@ -404,8 +404,8 @@ cross_sectional <- function(
       paste0("For binomial data, the ROPE is built under the principle that a predictor's effect is considered negligible ",
              "if a large change in the predictor (two standard deviations) would change the log odds ratio of the outcome by a very ",
              "small amount (a tenth of the outcome's standard deviation). The ROPE bounds describe the range of coefficient values ",
-             "that meet this condition. A large probability that the effect is outside the ROPE indicates practically ",
-             "significant association between the predictor and outcome.")
+             "that meet this condition. A large probability that the effect is inside the ROPE indicates practically ",
+             "negligible association between the predictor and outcome.")
 
   }
 
