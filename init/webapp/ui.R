@@ -473,16 +473,21 @@ ui <- navbarPage(
                                 is larger among the observed data
                                 relative to the predictive data.
                                 Values of the BPVal that are close 0 or 1 indicate
-                                inadequate fit from the model.
-                                to 0 or 1 indicate inadequate fit
+                                inadequate fit from the model. Values
+                                <0.05 or >0.95 are used as a cutoff for
+                                adequate model fit.
                                "
                         )),
                  tags$p(tags$b("Log Transformation"),
                         paste0("
                                 Models that represent outcomes on the log scale
-                                sometimes model the observed data than those that do not
-                                transform. In a regression setting, this amounts to taking the log
+                                sometimes model the observed data better than models
+                                that do not
+                                transform the outcome.
+                                In a regression setting, this amounts to taking the log
                                 of the outcome variable and modelling this as the outcome.
+                                Subsequently, interpretation of effects are different
+                                depending on whether the outcome is transformed.
                                "
                         )),
 

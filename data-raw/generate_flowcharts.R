@@ -8,31 +8,31 @@ continuous_base_flowchart <- create_graph() |>
 
   # Add nodes
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Untransformed \n Gaussian GLM", type = "final_model") |>
-  set_node_position(node = 1, x = 2, y = 6) |>
+  set_node_position(node = 1, x = 1.8, y = 6) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Untransformed NP GLM", type = "final_model") |>
   set_node_position(node = 2, x = 3.5, y = 6) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Log Transformed Gaussian GLM", type = "final_model") |>
-  set_node_position(node = 3, x = 9, y = 7) |>
+  set_node_position(node = 3, x = 7, y = 6) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Log Transformed NP GLM", type = "final_model") |>
-  set_node_position(node = 4, x = 5, y = 1) |>
+  set_node_position(node = 4, x = 2, y = 3) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Untransformed NP GLM", type = "final_model") |>
-  set_node_position(node = 5, x = 5, y = -1) |>
+  set_node_position(node = 5, x = 2, y = 2) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Continuous Outcome", type = "outcome") |>
   set_node_position(node = 6, x = 0, y = 5.5) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Adequate Model Fit \n Based on Bayes \n Pval", type = "test") |>
-  set_node_position(node = 7, x = 2, y = 4) |>
+  set_node_position(node = 7, x = 1.8, y = 4) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Positive \n Outcomes", type = "test") |>
   set_node_position(node = 8, x = 3.5, y = 4) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Adequate Model Fit \n Based on Bayes \n Pval", type = "test") |>
-  set_node_position(node = 9, x = 9, y = 4) |>
+  set_node_position(node = 9, x = 7, y = 4) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Untransformed NP GLM GOF < Transformed NP GLM GOF", type = "test") |>
-  set_node_position(node = 10, x = 8.5, y = -1) |>
+  set_node_position(node = 10, x = 7, y = 1.25) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Fit Untransformed \n Gaussian GLM", type = "model") |>
   set_node_position(node = 11, x = 0, y = 4) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Fit Log Transformed Gaussian GLM", type = "model") |>
   set_node_position(node = 12, x = 5, y = 5) |>
   add_node(node_aes = node_aes(fixedsize = FALSE), label = "Fit \n Untransformed \n NP GLM and Fit \n Log Transformed NP GLM \n", type = "model") |>
-  set_node_position(node = 13, x = 10, y = 2) |>
+  set_node_position(node = 13, x = 7, y = 2.5) |>
 
 
   # Add edges
@@ -84,6 +84,7 @@ continuous_base_flowchart <- create_graph() |>
   set_node_attrs_ws(node_attr = "fillcolor", value = "orange") |> #Set all text to black
   set_node_attrs_ws(node_attr = "shape", value = "rectangle") |>
   clear_selection()
+
 
 continuous_base_flowchart |> render_graph()
 

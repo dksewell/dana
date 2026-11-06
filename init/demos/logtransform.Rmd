@@ -1,0 +1,287 @@
+---
+title: "Log Transform"
+format: 
+  html:
+    toc: true
+    toc-location: left
+    embed-resources: true
+    theme: litera
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+
+# Untransformed vs Log Transformed Gaussian Response (Posterior Predictive Check)
+
+*Goal: Compare untransformed vs log transformed responses for gaussian response
+mixed models*
+
+Let $y_i^{\text{obs}}$ be the $i$th observed response, and let 
+$M(\mathbf{y}^{(\theta)})$ be the vector of predicted responses.
+
+We use the expected absolute loss function to compare the log and non-log
+transformed models:
+
+$\frac{1}{N} \sum_{i=1}^{N}|y_i - M(\mathbf{y}^{\theta})|$
+
+
+
+
+```{r}
+
+## Simulate data
+set.seed(123)
+n = 400
+
+# Assign normal distribution outcomes
+
+x <- runif(n = n , min = 0, max = 1)
+y <- rnorm(n = n, mean = 5* x, sd = 3) + 10
+
+ndat <- data.frame(x, y)
+
+# Fit model
+fit <- bayesics::np_glm_b(formula = y ~ x, family = "gaussian", seed = 123, data = ndat)
+
+
+# Model components:
+# (Cant seem to get posterior y_i draws)
+
+fit$fitted |> # Posterior Means
+  head()
+
+bayesics::get_posterior_draws(fit) |> # Posterior beta draws (no sigmas)
+  head()
+
+predict(fit) # Posterior means and CI's
+
+ 
+
+
+
+```
+
+
+
+
+
+```{r}
+
+## Simulate data
+set.seed(123)
+n = 400
+
+# Assign normal distribution outcomes
+x <- runif(n = n , min = 0, max = 1)
+y <- 5 * rnorm(n = n, mean = x, sd = 3) + 10
+
+ndat <- data.frame(x, y)
+
+# Fit model
+
+fit <- bayesics::np_glm_b(formula = y ~ x, family = "gaussian", seed = 123, data = ndat)
+
+
+# Model components:
+
+fit$fitted |> # Posterior Means
+  head()
+  
+get_posterior_draws(fit) |> # Posterior beta draws (no sigmas)
+  head()
+
+predict(fit) # Posterior means and CI's
+
+
+
+
+
+```
+
+
+
+## Simulate data
+
+```{r}
+
+set.seed(123)
+n = 400
+
+# Set data
+x <- runif(n = n , min = 0, max = 1)
+
+
+# Assign normal distribution outcomes
+y <- 5 * rnorm(n = n, mean = x, sd = 3) + 10
+ndat <- data.frame(x, y)
+
+# Assign log normal distribution outcomes
+y <- exp(rnorm(n = n, mean = x, sd = 1))  # Exponentiated response!
+ldat <- data.frame(x, y)
+
+
+# Compare plots
+ggplot(ndat) + geom_histogram(mapping = aes(x = y)) + labs(title = "Normal Outcome")
+
+ggplot(ldat) + geom_histogram(mapping = aes(x = y), bins = 40) + labs(title = "Lognormal Outcome (Nontransformed)")
+ggplot(ldat) + geom_histogram(mapping = aes(x = log(y)), bins = 40) + labs(title = "Lognormal Outcome (Transformed)")
+
+
+```
+
+Untransformed lognormal data looks amenable to log transformation.
+
+
+# Expected Absolute Loss
+
+Calculates expected absolute loss statistic between observed values
+and median posterior. This is done for both a log-transformed and untransformed
+response.
+
+```{r}
+
+
+fit1 <- bayesics::np_glm_b(formula = y ~ x, family = "gaussian", seed = 123, data = ndat)
+
+# Get posterior draws of parameters
+post_draws <- bayesics::get_posterior_draws(fit1)
+post_draws |>
+  head()
+
+# Form design matrix from the data
+design_mat <- t(model.matrix(fit1))
+
+# Matrix multiply to get posterior means
+post_means <- post_draws %*% design_mat
+
+# Collect means over all posterior draws
+colMeans(post_means)
+
+
+# ! This does not match with the posterior mean from predict()
+predict(fit1, seed = 123) |>
+  head()
+
+predict(fit1, seed = 456) |>
+  head()
+
+
+ael_stat <- function(n_formula, l_formula, data){
+  
+  n_fit <- rstanarm::stan_glmer(formula = n_formula, data = data) # Modelling untransformed response
+  l_fit <- rstanarm::stan_glmer(formula = l_formula, data = data) # Modelling transformed response
+  
+  # Get posterior predictions
+  n_predictions <- rstanarm::posterior_predict(n_fit)
+  l_predictions <- rstanarm::posterior_predict(l_fit)
+   
+   ndraws <- nrow(n_predictions) # These will be the same for both model types
+   nobs <- ncol(n_predictions)
+  
+   # Get observed quantities
+   observations <- matrix(rep(n_fit$y, times = ndraws), nrow = ndraws, ncol = nobs, byrow = TRUE) # Again, same for both types
+
+   # Get posterior medians
+   n_medians <- matrix(rep(apply(n_predictions, MARGIN = 1, FUN = median), each = nobs), 
+                       nrow = ndraws, 
+                       ncol = nobs, 
+                       byrow = TRUE)
+   l_medians <- matrix(rep(apply(exp(l_predictions), MARGIN = 1, FUN = median), each = nobs), 
+                       nrow = ndraws, 
+                       ncol = nobs, 
+                       byrow = TRUE) # Transformed onto non-log scale
+   
+   # Calculate average distance between observations and posterior median
+   n_diffs <- abs(observations - n_medians)
+   l_diffs <- abs(observations - l_medians)
+   
+   # Calculate the average of these differences
+   n_ael <- mean(abs(n_diffs))
+   l_ael <- mean(abs(l_diffs)) 
+   
+   
+  rslt <- list(n_predictions = n_predictions,
+               l_predictions = l_predictions,
+               observations = observations,
+               n_medians = n_medians,
+               l_medians = l_medians,
+               n_diffs = n_diffs,
+               l_diffs = l_diffs,
+               n_ael = n_ael,
+               l_ael = l_ael,
+               n_fit = n_fit,
+               l_fit = l_fit)
+
+  return(rslt)
+  
+  
+}
+
+
+# Results from normal distributed response
+comp <- ael_stat(n_formula = y ~ x | group,
+                 l_formula = log(y) ~ x |group,
+                 data = ndat)
+
+comp$n_ael
+comp$l_ael
+
+
+
+# Results from lognormal response
+comp2 <- ael_stat(n_formula = y ~ x | group,
+                 l_formula = log(y) ~ x |group,
+                 data = ldat)
+
+
+comp2$n_ael
+comp2$l_ael
+
+
+
+```
+
+
+# Looking at calculations
+
+```{r}
+
+head(comp$observations)[, 1:10]
+head(comp$n_predictions)[, 1:10]
+head(comp$l_predictions)[, 1:10]
+
+head(comp$n_diffs)[, 1:10]
+head(comp$l_diffs)[, 1:10]
+
+summary(comp$n_fit)
+summary(comp$l_fit)
+
+
+
+```
+
+
+
+
+
+```{r}
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+

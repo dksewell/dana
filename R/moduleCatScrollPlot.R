@@ -62,7 +62,7 @@ serverCatScrollPlot <- function(id, data, cat_vars, group_var){
         cat_plot_list <- lapply(cat_vars, function(x){
           plotly::ggplotly(
             ggplot2::ggplot(dplyr::as_tibble(data[x])) +
-              geom_bar(ggplot2::aes(x = .data[[x]]))
+              geom_bar(ggplot2::aes(x = .data[[x]])) + ggplot2::theme_minimal()
           )
         })
 
@@ -127,8 +127,8 @@ uiCatScrollPlot <- function(id, label = "catscrollplot"){
   shiny::tagList(
     shiny::tags$h3(shiny::tags$b("Categorical Variables")),
     plotly::plotlyOutput(ns("plot"), width = 500, height = 500),
-    shiny::actionButton(ns("buttonbackwards"), label = "Backwards"),
-    shiny::actionButton(ns("buttonforwards"), label = "Forwards"),
+    shiny::actionButton(ns("buttonbackwards"), label = "Previous Variable"),
+    shiny::actionButton(ns("buttonforwards"), label = "Next Variable"),
     shiny::textOutput(ns("scrollindexinfo"))
   )
 }

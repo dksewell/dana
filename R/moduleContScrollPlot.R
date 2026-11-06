@@ -121,10 +121,10 @@ serverContScrollPlot <- function(id, data, cont_vars, group_var = NULL){
 uiContScrollPlot <- function(id, label = "contscrollplot"){
   ns <- shiny::NS(id)
   shiny::tagList(
-    shiny::tags$h3(shiny::tags$b("Continuous Variables")),
+    shiny::tags$h3(shiny::tags$b("Numeric Variables")),
     plotly::plotlyOutput(ns("plot"), height = 500, width = 500),
-    shiny::actionButton(ns("buttonbackwards"), label = "Backwards"),
-    shiny::actionButton(ns("buttonforwards"), label = "Forwards"),
+    shiny::actionButton(ns("buttonbackwards"), label = "Previous Variable"),
+    shiny::actionButton(ns("buttonforwards"), label = "Next Variable"),
     shiny::textOutput(ns("scrollindexinfo"))
   )
 }
