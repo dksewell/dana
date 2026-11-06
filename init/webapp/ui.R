@@ -7,7 +7,7 @@ ui <- navbarPage(
     title = "About the app",
     div(
       class = "content",
-      HTML("<h2>Welcome to <b>DANA</b>: <b>D</b>esign and <b>An</b>alysis <b>A</b>ssistant</h2>"),
+      HTML("<h2>Welcome to <b>DANA</b>: <b>D</b>esign and <b>An</b>alysis <b>A</b>ssistant <b> Demo Branch </b></h2>"),
       p("This app is designed to guide you through the process of selecting an appropriate quantitative study design based on research objectives and study conditions, and then analyze your data accordingly.  DANA has two parts."),
       p(),
       p(),
@@ -266,17 +266,7 @@ ui <- navbarPage(
                                        selected = "Cross-sectional (Regression)",
                                        choices = c(
                                          "Cross-sectional (Regression)",
-                                         "Cross-sectional (No Regression)",
-                                         "Retrospective Cohort (No Regression)",
-                                         "Retrospective Cohort (Regression)",
-                                         "Prospective Cohort (No Regression)",
-                                         "Prospective Cohort (Regression)",
-                                         "Case-Control (Unmatched)",
-                                         "Case-Control (Matched)",
-                                         "Interrupted Time-Series",
-                                         "Stepped Wedge",
-                                         "Cluster Randomized Trial (CRT)",
-                                         "Randomized Controlled Trial (RCT)"
+                                         "Cross-sectional (No Regression)"
                                        )),
                                      conditionalPanel(
                                        condition = "input.study_design == 'Cross-sectional (Regression)'",
@@ -299,7 +289,7 @@ ui <- navbarPage(
                                      ),
                                      conditionalPanel(
                                        condition = "input.study_design == 'Cross-sectional (No Regression)'",
-                                       selectInput("t_test_type_csnr", "Response Comparison:", choices = c("Two Sample Mean", "One Sample Mean")),
+                                       selectInput("t_test_type_csnr", "Response Comparison:", choices = c("Two Sample Mean")),
                                        selectInput(
                                          "response_var_csnr",
                                          "Response Variable:", choices = NULL),
